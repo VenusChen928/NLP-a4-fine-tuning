@@ -45,7 +45,19 @@ def do_train(args, model, train_dataloader, save_dir="./out"):
     # You can use progress_bar.update(1) to see the progress during training
     # You can refer to the pytorch tutorial covered in class for reference
 
-    raise NotImplementedError
+    for _ in range(num_epochs):
+        for batch in train_dataloader:
+            batch = {key: value.to(device) for key, value in batch.items()}
+
+            optimizer.zero_grad()  # Clear gradients from previous batch
+            loss = model(**batch).loss
+            loss.backward()        # Compute gradients
+            optimizer.step()       # Update parameters
+            lr_scheduler.step()
+
+            progress_bar.update(1)
+
+    progress_bar.close()
 
     ##### YOUR CODE ENDS HERE ######
 
