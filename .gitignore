@@ -1,4 +1,17 @@
 .DS_Store
 __pycache__/
 *.pyc
+*.pyo
 .claude/settings.local.json
+
+# Local editor settings and the supplied assignment handout
+.vscode/
+/a4.pdf
+
+# Local experiment outputs and model checkpoints
+/part1/runs/
+/part2/runs/
+/part1/out/
+/part1/out_augmented/
+/part1/out*_original.txt
+/part1/out*_transformed.txt
