@@ -10,6 +10,8 @@ the working terminal; Files > Open in Terminal was unavailable.
   overlay. Deploy to `/scratch/yc7009/a4_env/run_part1_gpu.sh` on Burst.
 - `q2_eval.sbatch`: evaluates the Q1 checkpoint with `TYPO_PROB=0.40`; requests
   one A100, 4 CPUs, 32 GB RAM and 30 minutes. It does not retrain the model.
+- `q3_full.sbatch`: trains on 25,000 original plus 5,000 transformed training
+  examples, then evaluates both full test sets in the same GPU job.
 - This README: submission commands and the location of saved results.
 
 The launcher and evaluation script disable Python bytecode generation.
@@ -27,9 +29,9 @@ sbatch hpc/burst/q2_eval.sbatch
 The script checks the exact hashes of `part1/main.py` and `part1/utils.py` before
 and after evaluation. Keep them unchanged while a job is queued or running;
 update the checks deliberately when changing the source. The current source
-has only comment whitespace cleaned up since job 28708, with identical Python
-AST and transformation behavior. Historical run records retain their original
-source hashes.
+includes the Q3 augmentation loader. Formatting changes in `utils.py` preserve
+its Python AST and Q2 transformation behavior. Historical run records retain
+their original source hashes.
 
 To inspect the already completed p=0.40 run without resubmitting it:
 
@@ -41,6 +43,31 @@ tail -n 25 /scratch/yc7009/projects/assignment4/runs/q2_typo_p040_28708/eval.log
 
 The batch job runs independently of Jupyter and the browser. It uses
 `/scratch/yc7009/projects/assignment4/runs/q1_25970/out/` as the model checkpoint.
+
+## Q3 training and both evaluations
+
+The Q3 script requests one A100, 4 CPUs, 32 GB RAM and a 2-hour limit. It uses
+the repo's `hpc/burst/run_part1_gpu.sh`, starts from `bert-base-cased`, and runs:
+
+```bash
+python -B main.py --train_augmented --eval --eval_transformed \
+  --learning_rate 5e-5 --num_epochs 3 --batch_size 8
+```
+
+The program saves `out_augmented/` before loading it for the two evaluations.
+An exception stops the pipeline. Submit only after deploying the checked code,
+setting `A4_SOURCE_COMMIT` to that code's actual Git commit:
+
+```bash
+sbatch --export=ALL,A4_SOURCE_COMMIT=<verified-source-commit> hpc/burst/q3_full.sbatch
+```
+
+The output directory is `runs/q3_typo_p040_<jobid>/`. It retains the checkpoint,
+`out_augmented_original.txt`, `out_augmented_transformed.txt`, `train_eval.log`
+and one `run_info.json`. The script checks output sizes and label order against
+Q1/Q2, and records accuracies and output hashes on completion. `pipeline_status`
+describes the script's outcome; use `sacct` to verify final Slurm status later.
+Do not edit the remote source while the job is queued or running.
 
 ## Saved results
 

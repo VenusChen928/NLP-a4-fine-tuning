@@ -67,15 +67,10 @@ def custom_transform(example):
 
     # You should update example["text"] using your transformation
 
-    ##### YOUR CODE ENDS HERE ######
-
     text = example["text"]   # Store the original text
 
     seed_input = f"{TRANSFORM_SEED}\0{text}".encode("utf-8")
-    seed = int.from_bytes(
-        hashlib.sha256(seed_input).digest()[:8],
-        "big",
-    )
+    seed = int.from_bytes(hashlib.sha256(seed_input).digest()[:8], "big")
     rng = random.Random(seed)
 
 
@@ -101,9 +96,7 @@ def custom_transform(example):
             return word
 
         i = rng.choice(positions)
-        replacement = rng.choice(
-            NEARBY_KEYS[word[i].lower()]
-        )
+        replacement = rng.choice(NEARBY_KEYS[word[i].lower()])
 
         if word[i].isupper():
             replacement = replacement.upper()

@@ -36,8 +36,8 @@ test -s "$MODEL_DIR/config.json"
 # Check the debugged p=0.40 source; do not duplicate code or environments in runs.
 check_source() {
   printf '%s  %s\n' \
-    f31a03b1c9ca79e7954f4f2535656d76e0f5fc66d05fae978d6143a0acf035d5 "$PROJECT/part1/main.py" \
-    e19d04dff0a00b4fdd26bc62d11535cf9a2788bdc68d94b7f7674258b470de7b "$PROJECT/part1/utils.py" | sha256sum -c -
+    00236c763967f90972eed123de60b358cb693a360f575a401a779c4551ef8431 "$PROJECT/part1/main.py" \
+    9883a560434c7d1742cbe49bb7c1dde35c35448d556ce21744d18f0f2bc9687c "$PROJECT/part1/utils.py" | sha256sum -c -
 }
 check_source
 bash "$RUNNER" python -c 'import torch; assert torch.cuda.is_available(), "CUDA unavailable"; print("GPU", torch.cuda.get_device_name(0)); print("PyTorch", torch.__version__)'
