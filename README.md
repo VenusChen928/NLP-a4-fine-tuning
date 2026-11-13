@@ -13,7 +13,9 @@ You will require GPUs for this homework. You can either use the HPC server (see 
 
 ## Layout
 
-- `part1/`: starter code for Part 1 (`main.py`, `utils.py`). You will modify `main.py` and `utils.py`.
+- `part1/`: completed BERT training, typo transformation and data augmentation
+  (`main.py`, `utils.py`). See the [Part 1 guide](part1/README.md) and
+  [verified Q1–Q3 submission outputs](part1/runs/README.md).
 - `part2/`: starter code for Part 2 (`train_t5.py`, `t5_utils.py`, `utils.py`, `load_data.py`,
   `evaluate.py`), the text-to-SQL `data/`, the ground-truth dev records in `records/`, and a
   `results/` directory where you should save your model's output SQL/records for submission.

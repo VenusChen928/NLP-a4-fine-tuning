@@ -1,6 +1,6 @@
 # Assignment 4 Part 1 on Burst
 
-Use the course Burst OOD site in Safari: https://ood.burst.hpc.nyu.edu/.
+Use the course Burst OOD site: https://ood.burst.hpc.nyu.edu/.
 Burst is separate from Torch. On 2026-11-11, a CPU JupyterLab session supplied
 the working terminal; Files > Open in Terminal was unavailable.
 
@@ -75,11 +75,13 @@ Local records are in `part1/runs/`; remote records are in
 `/scratch/yc7009/projects/assignment4/runs/`. The local archives contain the
 outputs and one `run_info.json`, with no repeated source or environment copies.
 
-| Run | Accuracy | Drop from Q1 | Slurm result |
+| Run | Accuracy | Comparison | Slurm result |
 | --- | --- | --- | --- |
 | Q1 `25970` | 93.072% | — | COMPLETED, 0:0 |
-| Q2 p=0.30 `28674` | 89.788% | 3.284 points | COMPLETED, 0:0 |
-| Q2 p=0.40 `28708` | 88.036% | 5.036 points | COMPLETED, 0:0 |
+| Q2 p=0.30 `28674` | 89.788% | Q1 minus 3.284 points | COMPLETED, 0:0 |
+| Q2 p=0.40 `28708` | 88.036% | Q1 minus 5.036 points | COMPLETED, 0:0 |
+| Q3 original `29911` | 92.912% | Q1 minus 0.160 points | COMPLETED, 0:0 |
+| Q3 transformed `29911` | 89.048% | Q2 p=0.40 plus 1.012 points | COMPLETED, 0:0 |
 
 The p=0.40 run took 00:05:24 and exceeds Q2b's greater-than-4-point criterion.
 Its local folder `q2_typo_p040_28708/` contains `out_transformed.txt`, `eval.log`,
@@ -87,6 +89,12 @@ Its local folder `q2_typo_p040_28708/` contains `out_transformed.txt`, `eval.log
 all 25,000 predictions were checked against the Q1 label order. Q1's `out/`
 contains the checkpoint needed for subsequent comparisons. The separate local
 Q1 debug checkpoint is not the full-run checkpoint.
+
+Q3 `29911` completed training and both evaluations in 00:43:09. Its checkpoint,
+logs and run record are preserved locally and on Burst. Git includes the four
+final prediction files and a [results index](../../part1/runs/README.md), while
+checkpoints, logs and earlier/debug runs remain local. Cloning the repo does not
+download the model weights required for evaluation-only commands.
 
 ## Local transformation debug
 
