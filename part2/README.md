@@ -2,6 +2,10 @@
 
 > ### Please start early.
 
+The reproducible baseline workflow, Burst submission steps, artifact layout,
+and assignment-table evidence are documented in
+[the Part 2 experiment guide](../hpc/burst/PART2.md).
+
 ## Environment
 
 It's highly recommended to use a virtual environment (e.g. conda, venv) for this assignment. Note that Part 2 pins different package versions than Part 1, so use a separate environment from Part 1.

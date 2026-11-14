@@ -6,8 +6,6 @@ import pickle
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
-import nltk
-nltk.download('punkt')
 from transformers import T5TokenizerFast
 import torch
 
@@ -27,15 +25,63 @@ class T5Dataset(Dataset):
             * Class behavior should be different on the test set.
         '''
         # TODO
+        self.tokenizer = T5TokenizerFast.from_pretrained("google-t5/t5-small")
+
+        self.encoder_ids, self.target_ids = self.process_data(data_folder, split, self.tokenizer)
 
     def process_data(self, data_folder, split, tokenizer):
         # TODO
+        # Read the natural language inputs:
+        input_path = os.path.join(data_folder, f"{split}.nl")
+        inputs = load_lines(input_path)
+
+        # Read the SQL targeted outputs:
+        # train/dev set have SQL targets, but test does not
+        if split == "test":
+            targets = None
+        else:
+            target_path = os.path.join(data_folder, f"{split}.sql")
+            targets = load_lines(target_path)
+
+            if len(inputs) != len(targets):
+                raise ValueError(f"{split}: the numbers of inputs and targets differ!")
+
+        # Tokenize inputs without padding or truncation:
+        encoder_ids = tokenizer(
+            inputs,
+            add_special_tokens = True,
+            padding = False,
+            truncation = False
+        )["input_ids"]
+
+        # Tokenize SQL targets using the same tokenizer:
+        if targets is None:
+            target_ids = None
+        else:
+            target_ids = tokenizer(
+                targets,
+                add_special_tokens = True,
+                padding = False,
+                truncation = False
+            )["input_ids"]
+
+        return encoder_ids, target_ids
     
     def __len__(self):
         # TODO
+        return len(self.encoder_ids)
 
     def __getitem__(self, idx):
         # TODO
+        encoder_ids = torch.tensor(self.encoder_ids[idx], dtype = torch.long)
+
+        if self.target_ids is None:
+            return encoder_ids
+
+        target_ids = torch.tensor(self.target_ids[idx], dtype = torch.long)
+
+        return encoder_ids, target_ids
+
 
 def normal_collate_fn(batch):
     '''
@@ -54,7 +100,29 @@ def normal_collate_fn(batch):
         * initial_decoder_inputs: The very first input token to be decoder (only to be used in evaluation)
     '''
     # TODO
-    return [], [], [], [], []
+    # Each example contains (encoder_ids, target_ids):
+    encoder_sequences, target_sequences = zip(*batch)
+
+    encoder_ids = pad_sequence(encoder_sequences, batch_first = True, padding_value = PAD_IDX)
+
+    encoder_mask = (encoder_ids != PAD_IDX).long()
+
+    decoder_targets = pad_sequence(target_sequences, batch_first = True, padding_value = PAD_IDX)
+
+    # Apply teacher-forcing during training (shift-by-one)
+    # Shift targets right, beginning with T5's start token:
+    decoder_inputs = torch.full_like(decoder_targets, PAD_IDX)
+    decoder_inputs[:, 1:] = decoder_targets[:, :-1]
+
+    initial_decoder_inputs = decoder_inputs[:, :1].clone()
+
+    return (
+        encoder_ids,
+        encoder_mask,
+        decoder_inputs,
+        decoder_targets,
+        initial_decoder_inputs
+    )
 
 def test_collate_fn(batch):
     '''
@@ -70,7 +138,18 @@ def test_collate_fn(batch):
         * initial_decoder_inputs: The very first input token to be decoder (only to be used in evaluation)
     '''
     # TODO
-    return [], [], []
+    # Each test example contains only encoder_ids:
+    encoder_ids = pad_sequence(batch, batch_first = True, padding_value = PAD_IDX)
+
+    encoder_mask = (encoder_ids != PAD_IDX).long()
+
+    initial_decoder_inputs = torch.full((len(batch), 1), PAD_IDX, dtype = torch.long)
+
+    return (
+        encoder_ids,
+        encoder_mask,
+        initial_decoder_inputs
+    )
 
 def get_dataloader(batch_size, split):
     data_folder = 'data'

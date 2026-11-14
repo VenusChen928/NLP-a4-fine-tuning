@@ -24,6 +24,8 @@ __pycache__/
 
 # Other local outputs and checkpoints
 /part2/runs/
+/part2/releases/
+/part2/slurm/
 /part1/out/
 /part1/out_augmented/
 /part1/out*_original.txt

@@ -11,7 +11,11 @@ DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 
 def setup_wandb(args):
     # Implement this if you wish to use wandb in your experiments
-    pass
+    return wandb.init(
+        project = "nlp-a4-part2",
+        name = args.experiment_name,
+        config = {**vars(args), "base_model_name": "google-t5/t5-small"}
+    )
 
 def initialize_model(args):
     '''
@@ -20,7 +24,12 @@ def initialize_model(args):
     or training a T5 model initialized with the 'google-t5/t5-small' config
     from scratch.
     '''
-    pass
+    if not args.finetune:
+        raise ValueError("Pass: finetune to use the pretrained T5 baseline!")
+
+    model = T5ForConditionalGeneration.from_pretrained("google-t5/t5-small")
+
+    return model.to(DEVICE)
 
 def mkdir(dirpath):
     if not os.path.exists(dirpath):
@@ -31,11 +40,29 @@ def mkdir(dirpath):
 
 def save_model(checkpoint_dir, model, best):
     # Save model checkpoint to be able to load the model later
-    pass
+    checkpoint_path = os.path.join(checkpoint_dir, "best" if best else "last")
+
+    os.makedirs(checkpoint_path, exist_ok = True)
+
+    model.save_pretrained(checkpoint_path)
 
 def load_model_from_checkpoint(args, best):
     # Load model from a checkpoint
-    pass
+    model_type = "ft" if args.finetune else "scr"
+
+    checkpoint_path = os.path.join(
+        "checkpoints",
+        f"{model_type}_experiments",
+        args.experiment_name,
+        "best" if best else "last"
+    )
+
+    if not os.path.isdir(checkpoint_path):
+        raise FileNotFoundError(f"Checkpoint directory doesn't exist: {checkpoint_path}!")
+
+    model = T5ForConditionalGeneration.from_pretrained(checkpoint_path, local_files_only = True)
+
+    return model.to(DEVICE)
 
 def initialize_optimizer_and_scheduler(args, model, epoch_length):
     optimizer = initialize_optimizer(args, model)
