@@ -7,6 +7,13 @@ run records; never reuse a run directory for another experiment.
 
 ## Storage
 
+The tree below is the raw **remote job working layout**. Completed local
+experiments use the compact layout in [the Part 2 README](../../part2/README.md).
+Local archives retain only the selected checkpoint and one copy of each output;
+source and logs are compressed, and metadata are consolidated in `run.json`.
+The helper scripts live in `part2/tools/` in the repository and are copied into
+the flat `source/` folder for an HPC job.
+
 Remote project root: `/scratch/yc7009/projects/assignment4`.
 Local project root: `/Users/venus/Desktop/NLP/Assignments/assignment4`.
 
@@ -119,9 +126,9 @@ checkpoint locally. The Slurm job continues independently of Jupyter/browser.
 
 | Requirement | Saved evidence |
 | --- | --- |
-| Q4, Tables 1 and 2 | `reports/q4_statistics.csv` and JSON; train/dev counts before/after preprocessing |
+| Q4, Tables 1 and 2 | `reports/q4_statistics.json`; train/dev counts before/after preprocessing |
 | Q5, Table 3 | `run_config.json`, saved model config, package versions, source manifest, command |
-| Q6, Table 4 | `history.jsonl`, `best_metrics.json`, `dev_metrics.json`, `reports/baseline_summary.json` |
+| Q6, Table 4 | `history.jsonl`, `best_metrics.json`, `dev_metrics.json`, `run_info.json` |
 | Q6, Table 5 | `reports/dev_evidence.jsonl`; manually inspect actual failures, define categories and count them |
 | Q7 | Generate final test SQL/records only after choosing the final configuration using dev |
 
@@ -132,17 +139,23 @@ the whitespace stripped by the loader. Record the convention in the write-up.
 This first baseline supplies one Table 4 row, not all comparison experiments.
 
 Training does not generate test predictions or submit to Gradescope. After
-selecting a final run, generate its test files from a separate export working
-directory using the frozen source, saved best checkpoint, and the same
-tokenizer and decoding configuration. Pass `--eval_only --run_test` and the
-original experiment name. Validate 432 SQL lines and 432 record/error entries
-in original test order. The required output basenames are:
+selecting a final compact run on dev, use `part2/tools/export_test.py` with
+`--run-dir <run>` and a new `--output-dir <directory>`. This loads the saved
+model, tokenizer and decoding settings, then calls the existing
+`train_t5.test_inference()` without running training or dev evaluation.
+The original `train_t5.py --eval_only --run_test` workflow remains unchanged.
+See the Part 2 README for the full export command.
+Validate 432 SQL lines and 432 record/error entries in original test order.
+The required output basenames are:
 
 - `t5_ft_experiment_test.sql`
 - `t5_ft_experiment_test.pkl` (the supplied helper's `(records, error_msgs)` tuple)
 
-Keep that export and its configuration tied to the selected run. Use the test
-leaderboard sparingly as required by A4; do not tune using repeated test scores.
+Move the exported SQL/PKL to the required `part2/results/` and `part2/records/`
+locations and retain their metadata in the selected run. Avoid duplicate output
+copies; archive the old pair only when a later dev-selected model replaces it.
+Use the test leaderboard sparingly as required by A4; do not tune using
+repeated test scores.
 The write-up also needs the repository link and the final checkpoint download
 link. Neither a submission nor checkpoint publication is part of baseline
 training itself.

@@ -25,6 +25,7 @@ export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-4}"
 export A4_RUN_KIND="$mode"
 mkdir source records results reports
 cp "$release"/part2/*.py "$release/part2/requirements.txt" source/
+cp "$release"/part2/tools/*.py source/
 cp "$release/release_manifest.json" release_manifest.json
 cp "$release/hpc/burst/"* source/
 ln -s "$project/part2/data" data

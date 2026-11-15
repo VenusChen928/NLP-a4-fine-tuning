@@ -1,6 +1,5 @@
 """Record provenance and report evidence without changing model or metric definitions."""
 import argparse
-import csv
 from datetime import datetime, timezone
 import hashlib
 from importlib import metadata
@@ -10,6 +9,9 @@ from pathlib import Path
 import pickle
 import platform
 import sys
+
+# Allow execution from tools/ as well as the flattened frozen HPC source folder.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 def sha256(path):
@@ -40,15 +42,15 @@ def verify_release():
     return release
 
 
-def data_statistics():
+def data_statistics(data_folder='data', tokenizer_path='google-t5/t5-small', output_path=None):
     from transformers import T5TokenizerFast
-    tokenizer = T5TokenizerFast.from_pretrained('google-t5/t5-small', local_files_only=True)
+    tokenizer = T5TokenizerFast.from_pretrained(tokenizer_path, local_files_only=True)
     rows = []
     for stage in ['raw', 'processed']:
         for split in ['train', 'dev']:
             row = {'stage': stage, 'split': split}
             for extension, label in [('nl', 'natural_language'), ('sql', 'sql')]:
-                texts = Path(f'data/{split}.{extension}').read_text().splitlines()
+                texts = (Path(data_folder) / f'{split}.{extension}').read_text().splitlines()
                 if stage == 'processed':
                     texts = [text.strip() for text in texts]
                 ids = tokenizer(texts, add_special_tokens=False, padding=False, truncation=False)['input_ids']
@@ -59,16 +61,16 @@ def data_statistics():
                 row[f'{label}_max_tokens'] = max(lengths)
                 row[f'{label}_examples_with_unk'] = sum(tokenizer.unk_token_id in sequence for sequence in ids)
             rows.append(row)
-    with open('reports/q4_statistics.csv', 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0]))
-        writer.writeheader()
-        writer.writerows(rows)
-    write_json('reports/q4_statistics.json', {
-        'tokenizer': 'google-t5/t5-small',
+    report = {
+        'tokenizer': str(tokenizer_path),
         'counting_convention': 'T5 tokens; exclude added EOS, batch padding, and decoder start token; include emitted UNK. Vocabulary is distinct observed token IDs per split and text field.',
         'processing': 'strip leading/trailing whitespace; no prefix, filtering, truncation, or vocabulary changes',
         'rows': rows,
-    })
+    }
+    if output_path is not None:
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        write_json(output_path, report)
+    return report
 
 
 def prepare():
@@ -92,13 +94,12 @@ def prepare():
     }
     write_json('run_info.json', record)
     write_json('reports/packages.json', {d.metadata['Name']: d.version for d in metadata.distributions() if d.metadata['Name']})
-    data_statistics()
+    data_statistics(output_path='reports/q4_statistics.json')
     print(json.dumps(record, indent=2))
 
 
 def dev_evidence():
     from utils import compute_record_F1
-    checkpoint = Path('checkpoints/ft_experiments/baseline_v1')
     predictions = Path('results/t5_ft_baseline_v1_dev.sql').read_text().splitlines()
     questions = Path('data/dev.nl').read_text().splitlines()
     gold_sql = Path('data/dev.sql').read_text().splitlines()
@@ -118,16 +119,11 @@ def dev_evidence():
                 'gold_record_count': len(set(gold_rec)), 'predicted_record_count': len(set(pred_rec)),
                 'execution_error': error}
             f.write(json.dumps(row) + '\n')
-    best = json.loads((checkpoint / 'best_metrics.json').read_text())
-    config = json.loads((checkpoint / 'run_config.json').read_text())
-    final = json.loads((checkpoint / 'dev_metrics.json').read_text())
-    write_json('reports/baseline_summary.json', {
-        'best_epoch': best['epoch'], 'training_configuration': config,
-        'best_checkpoint_evaluation': final,
+    return {
         'sql_timeouts': sum('timed out' in message.lower() for message in errors),
-        'test_metrics': None,
-        'note': 'Use dev evidence for manual Q6 error categorization; no test inference or leaderboard submission performed.',
-    })
+        'sql_execution_errors': sum(bool(message) for message in errors),
+        'examples': len(predictions),
+    }
 
 
 def finalize(exit_code):
@@ -139,7 +135,7 @@ def finalize(exit_code):
         verify_release()
         if exit_code == 0:
             if os.environ['A4_RUN_KIND'] == 'baseline':
-                dev_evidence()
+                record['dev_analysis'] = dev_evidence()
                 record['final_dev'] = json.loads(Path('checkpoints/ft_experiments/baseline_v1/dev_metrics.json').read_text())
             elif not Path('reports/smoke.json').is_file():
                 raise ValueError('Smoke output is missing')
@@ -156,7 +152,15 @@ def finalize(exit_code):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=['prepare', 'finalize'])
+    parser.add_argument('action', choices=['prepare', 'finalize', 'stats'])
     parser.add_argument('--exit-code', type=int, default=0)
+    parser.add_argument('--data-folder', default='data')
+    parser.add_argument('--tokenizer', default='google-t5/t5-small')
+    parser.add_argument('--output', type=Path, help='Optional statistics JSON; otherwise print only')
     args = parser.parse_args()
-    prepare() if args.action == 'prepare' else finalize(args.exit_code)
+    if args.action == 'stats':
+        print(json.dumps(data_statistics(args.data_folder, args.tokenizer, args.output), indent=2))
+    elif args.action == 'prepare':
+        prepare()
+    else:
+        finalize(args.exit_code)

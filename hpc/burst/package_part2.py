@@ -19,6 +19,7 @@ def digest(path):
 def main():
     root = Path(__file__).resolve().parents[2]
     files = sorted((root / 'part2').glob('*.py')) + [root / 'part2/requirements.txt']
+    files += sorted((root / 'part2/tools').glob('*.py'))
     files += [root / 'hpc/burst' / name for name in (
         'part2.sbatch', 'part2_pipeline.sbatch', 'run_part2_gpu.sh', 'setup_part2_environment.sh',
         'package_part2.py', 'PART2.md')]

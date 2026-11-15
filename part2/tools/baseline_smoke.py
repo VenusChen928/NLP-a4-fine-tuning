@@ -2,7 +2,11 @@
 import json
 import pickle
 from pathlib import Path
+import sys
 from types import SimpleNamespace
+
+# Allow execution from tools/ as well as the flattened frozen HPC source folder.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import torch
 from torch.utils.data import DataLoader, Subset
