@@ -1,8 +1,8 @@
 # Part 2 baseline experiments on Burst
 
 Use the course Burst Open OnDemand portal, not Torch. Local source is the
-source of truth. Each submitted job receives a frozen source release and a
-new directory named with its Slurm job ID. Preserve successful and failed
+source of truth. Sync local scripts directly to the matching remote project paths. Each job
+keeps its own source copy and a new directory named with its Slurm job ID. Preserve successful and failed
 run records; never reuse a run directory for another experiment.
 
 ## Storage
@@ -21,7 +21,6 @@ Local project root: `/Users/venus/Desktop/NLP/Assignments/assignment4`.
 part2/
   data/                              shared supplied data and database
   records/ground_truth_dev.pkl       shared supplied dev records
-  releases/<timestamp>_<hash>/       frozen source and release manifest
   runs/smoke_<jobid>/                interface validation, not a baseline score
   runs/baseline_<jobid>/             one full experiment
     source/                         exact Python and batch scripts used
@@ -72,17 +71,23 @@ dev Record F1 is selected; ties retain the earlier epoch. The final dev report
 reloads that checkpoint. Local JSON logs are sufficient for this baseline;
 W&B is optional and disabled in the batch command.
 
-## Release and submission
+## Script synchronization and submission
 
-Build a new local release after validating changes:
+Sync `part2/*.py`, `part2/requirements.txt`, `part2/tools/*.py` and the Part 2
+batch/runner scripts in `hpc/burst/` directly to their matching remote paths.
+No compressed release upload is required. Write `release_manifest.json` at the
+remote project root with local source/data hashes for the existing preflight
+checks. The filename is retained for compatibility with experiment reporting.
+Each job copies the synchronized scripts and manifest into its run directory.
+Do not edit the synchronized files between submission and job startup.
 
 ```bash
-python -B hpc/burst/package_part2.py
+cd /scratch/yc7009/projects/assignment4
+source_root=$PWD
+# Avoid inheriting Jupyter job environment retrieval flags
+unset SLURM_GET_USER_ENV SLURM_EXPORT_ENV SBATCH_GET_USER_ENV SBATCH_EXPORT
+mkdir -p part2/runs part2/slurm
 ```
-
-Upload its archive through Burst OOD into `part2/releases/`, verify the archive
-SHA256 printed by the packager, and extract it there. Do not edit a release
-after submission. The job verifies the supplied data against local checksums.
 
 First inspect current course partition limits and the prepared Part 2
 environment. The planned formal allocation is one A100, four CPU threads,
@@ -97,18 +102,31 @@ incomplete report prevents baseline training. The four-hour allocation limit
 covers both stages; the smoke's internal limit excludes Slurm queue time.
 
 ```bash
-sbatch "$release/hpc/burst/part2_pipeline.sbatch" "$release"
+sbatch "$source_root/hpc/burst/part2_pipeline.sbatch" "$source_root"
 ```
+
+For the SQL operator experiment, use the same pipeline and allocation:
+
+```bash
+sbatch --export=ALL --job-name=a4-t5-sql-ops "$source_root/hpc/burst/part2_pipeline.sbatch" "$source_root" sql_ops_v1 operators_v1
+```
+
+This writes `runs/smoke_<jobid>/` and `runs/sql_ops_v1_<jobid>/`. The same
+`operators_v1` mode is passed to preprocessing checks, GPU smoke, training and
+reporting. Only the experiment name and SQL representation differ from the
+baseline command. The smoke gate verifies the saved mode and lossless target
+round trips before starting an independent pretrained T5-small training run.
+The existing no-argument baseline mode remains supported.
 
 The standalone commands below remain useful for later debugging or experiments:
 
 ```bash
 cd /scratch/yc7009/projects/assignment4
-mkdir -p part2/releases part2/runs part2/slurm
-release=/scratch/yc7009/projects/assignment4/part2/releases/<release-id>
-sbatch --job-name=a4-t5-smoke --time=00:20:00 "$release/hpc/burst/part2.sbatch" smoke "$release"
+mkdir -p part2/runs part2/slurm
+source_root=/scratch/yc7009/projects/assignment4
+sbatch --job-name=a4-t5-smoke --time=00:20:00 "$source_root/hpc/burst/part2.sbatch" smoke "$source_root"
 # Inspect smoke JSON, log, CUDA memory, and sacct exit status before baseline.
-sbatch "$release/hpc/burst/part2.sbatch" baseline "$release"
+sbatch "$source_root/hpc/burst/part2.sbatch" baseline "$source_root"
 ```
 
 The smoke job performs two updates on 32 training examples with long SQL
@@ -151,9 +169,11 @@ The required output basenames are:
 - `t5_ft_experiment_test.sql`
 - `t5_ft_experiment_test.pkl` (the supplied helper's `(records, error_msgs)` tuple)
 
-Move the exported SQL/PKL to the required `part2/results/` and `part2/records/`
-locations and retain their metadata in the selected run. Avoid duplicate output
-copies; archive the old pair only when a later dev-selected model replaces it.
+Keep each exported SQL/PKL pair in its experiment's `test/` directory and record
+its paths and hashes in `run.json`. For the selected submission only, copy the
+pair to `part2/results/` and `part2/records/` under the required filenames and
+record the source run in `part2/results/README.md`. Replace both submission
+copies together while preserving every experiment's archived pair.
 Use the test leaderboard sparingly as required by A4; do not tune using
 repeated test scores.
 The write-up also needs the repository link and the final checkpoint download

@@ -4,9 +4,10 @@ import os
 import re
 import pickle
 import random
-from tqdm import tqdm
+import time
+from pathlib import Path
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Any
 
 import torch
@@ -62,7 +63,7 @@ def save_queries_and_records(sql_queries: List[str], sql_path: str, record_path:
     Helper function to save model generated SQL queries and their associated records
     to the specified paths.
 
-    Inputs: 
+    Inputs:
         * sql_queries (List[str]): The list of SQL queries to save
         * sql_path (str): Path to save SQL queries
         * record_path (str): Path to save database records associated with queries
@@ -73,7 +74,7 @@ def save_queries_and_records(sql_queries: List[str], sql_path: str, record_path:
             f.write(f'{query}\n')
 
     # Next compute and save records
-    records, error_msgs = compute_records(sql_queries)    
+    records, error_msgs = compute_records(sql_queries)
     with open(record_path, 'wb') as f:
         pickle.dump((records, error_msgs), f)
 
@@ -82,7 +83,7 @@ def read_queries(sql_path: str):
         qs = [q.strip() for q in f.readlines()]
     return qs
 
-def compute_records(processed_qs: List[str]):
+def compute_records(processed_qs: List[str], timeout_secs = 120, num_threads = 10):
     '''
     Helper function for computing the records associated with each SQL query in the
     input list. You may change the number of threads or the timeout variable (in seconds)
@@ -91,50 +92,36 @@ def compute_records(processed_qs: List[str]):
     Input:
         * processed_qs (List[str]): The list of SQL queries to execute
     '''
-    num_threads = 10
-    timeout_secs = 120
+    if timeout_secs <= 0 or num_threads < 1:
+        raise ValueError("SQL timeout and thread count must be positive")
 
-    pool = ThreadPoolExecutor(num_threads)
-    futures = []
-    for i, query in enumerate(processed_qs):
-        futures.append(pool.submit(compute_record, i, query))
-        
-    rec_dict = {}
-    try:
-        for x in tqdm(as_completed(futures, timeout=timeout_secs)):
-            query_id, rec, error_msg = x.result()
-            rec_dict[query_id] = (rec, error_msg)
-    except:
-        for future in futures:
-            if not future.done():
-                future.cancel()
-            
-    recs = []
-    error_msgs = []
-    for i in range(len(processed_qs)):
-        if i in rec_dict:
-            rec, error_msg = rec_dict[i]
-            recs.append(rec)
-            error_msgs.append(error_msg)
-        else:
-            recs.append([])
-            error_msgs.append("Query timed out")
-            
-    return recs, error_msgs
+    # SQL execution: share the existing batch deadline across dev and test
+    deadline = time.monotonic() + timeout_secs
+    with ThreadPoolExecutor(max_workers = num_threads) as pool:
+        results = list(pool.map(lambda item: compute_record(*item, deadline = deadline), enumerate(processed_qs)))
 
-def compute_record(query_id, query):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    return [item[1] for item in results], [item[2] for item in results]
+
+def compute_record(query_id, query, deadline = None):
+    if deadline is not None and time.monotonic() >= deadline:
+        return query_id, [], "Query timed out"
+
+    # SQL execution: interrupt running queries so worker threads can exit
+    database_uri = Path(DB_PATH).resolve().as_uri() + "?mode=ro"
+    connection_timeout = min(5.0, max(0.0, deadline - time.monotonic())) if deadline is not None else 5.0
+    conn = sqlite3.connect(database_uri, uri = True, timeout = connection_timeout)
+    if deadline is not None:
+        conn.set_progress_handler(lambda: time.monotonic() >= deadline, 10000)
 
     try:
-        cursor.execute(query)
-        rec = cursor.fetchall()
+        rec = conn.execute(query).fetchall()
         error_msg = ""
-    except Exception as e:
+    except sqlite3.Error as error:
         rec = []
-        error_msg = f"{type(e).__name__}: {e}"
+        error_msg = "Query timed out" if deadline is not None and time.monotonic() >= deadline else f"{type(error).__name__}: {error}"
+    finally:
+        conn.close()
 
-    conn.close()
     return query_id, rec, error_msg
 
 def compute_sql_exact_match(gt_qs: List[str], model_qs: List[str]):
@@ -194,7 +181,7 @@ def set_random_seeds(seed_value=42):
     '''
     random.seed(seed_value)
     np.random.seed(seed_value)
-    
+
     torch.manual_seed(seed_value)
     torch.cuda.manual_seed(seed_value)
     torch.cuda.manual_seed_all(seed_value)

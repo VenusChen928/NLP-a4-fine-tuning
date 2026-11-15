@@ -17,9 +17,9 @@ part2/
   data/                              supplied train/dev/test inputs and database
   records/
     ground_truth_dev.pkl             supplied dev answers
-    t5_ft_experiment_test.pkl         current Q7 database records
+    t5_ft_experiment_test.pkl         current submission copy, from baseline_31836
   results/
-    t5_ft_experiment_test.sql         current Q7 SQL queries
+    t5_ft_experiment_test.sql         current submission copy, from baseline_31836
   tools/                             supporting scripts, not model implementation
     baseline_smoke.py                small GPU interface/checkpoint check
     experiment_report.py            run metadata, Q4 statistics, Q6 dev evidence
@@ -30,9 +30,12 @@ part2/
       run.json                       configuration, scores, environment, provenance
       history.jsonl                  all 20 epochs for learning-curve analysis
       dev/                           predictions.sql and records.pkl
+      test/                          archived Q7 SQL/PKL pair
       analysis/                      q4_statistics.json and dev_evidence.jsonl
       source.zip                     exact training/export source snapshots
       train_eval.log.gz              complete original log, compressed
+    sql_ops_v1_32887/                 same compact layout, selected epoch 20
+      test/                          this experiment's Q7 SQL/PKL pair
 ```
 
 The baseline's best dev Record F1 is **74.5086%** (epoch 19). The unselected
@@ -45,6 +48,13 @@ metrics, package versions, source/data/artifact hashes, and test-export settings
 The original remote status was stale (`running`); scheduler completion was
 observed separately. Both facts are retained, without inventing a process exit code.
 
+The SQL processing run `sql_ops_v1_32887` has best dev Record F1 **76.1490%**,
+Record EM **71.8884%**, and SQL EM **57.0815%** (epoch 20). All 20 epochs and
+the final dev outputs were verified. Its scheduler state is `CANCELLED by 0`
+after a diagnostic step failed; this happened after the results were saved.
+The original status and accounting are retained in `run.json`. Missing dev
+analysis was recovered from saved outputs without rerunning inference.
+
 ### Supporting scripts and test export
 
 - `baseline_smoke.py`: a small GPU training/checkpoint check.
@@ -52,10 +62,13 @@ observed separately. Both facts are retained, without inventing a process exit c
 - `export_test.py`: loads the compact run's saved model, tokenizer and decoding
   settings, then calls the existing `train_t5.test_inference()` directly.
 
-The exporter reuses `T5Dataset.process_data()` and `test_collate_fn()`; it has no
-separate generation loop or SQL execution implementation. The original
-`train_t5.py`, `load_data.py`, and `utils.py` implementations are preserved.
-There is no `--test_only` mode in `train_t5.py`.
+The exporter reuses `T5Dataset.process_data()`, `test_collate_fn()` and the existing
+generation loop, restoring the run's saved SQL preprocessing mode. Dev and test
+share a read-only SQLite executor in `utils.py`, with 10 workers, a shared
+120-second deadline and progress-handler interruption. This prevents timed-out
+queries from leaving worker threads running after results are saved. The saved
+experiments retain their original source snapshots and results. There is no
+`--test_only` mode in `train_t5.py`.
 
 For the first test export of a newly selected compact run, from the repo root:
 
@@ -69,6 +82,12 @@ The output directory must be new. Only the required SQL/PKL pair is written.
 The existing baseline has already been exported and submitted; no regeneration
 is needed for this code cleanup. Its files and original export provenance remain
 unchanged, including the historical exporter in `source.zip`.
+
+The SQL processing export is in `runs/sql_ops_v1_32887/test/`: 432 SQL predictions
+and aligned record/error entries, with 46 SQL execution errors and no timeouts.
+It uses the same CPU inference settings as the baseline. Both required filenames
+are unchanged; the experiment directory separates versions. No test score is
+available until this pair is evaluated by Gradescope.
 
 ### Reproducing Table 1
 
@@ -86,8 +105,9 @@ counts, and counts distinct observed token IDs separately for each split and
 text type. UNK is included. `--output <path.json>` optionally saves the result.
 The baseline's JSON is already in `analysis/q4_statistics.json`. Training
 hyperparameters do not affect Table 1 when the raw files and tokenizer stay fixed.
-The processed stage currently applies the baseline's whitespace stripping; update
-that stage if a later experiment changes preprocessing before filling Table 2.
+For the SQL processing run, `analysis/q4_statistics.json` also records the
+`operators_v1` processed stage for Table 2. To reproduce it, use that run's
+checkpoint and add `--sql-preprocessing operators_v1` to the command above.
 
 ### Baseline submission result
 
@@ -101,19 +121,30 @@ with an inferred score or change predictions just to improve this display.
 
 ### Retention rules
 
-Keep one directory per actual experiment. The current Q7 outputs live only in
-`results/` and `records/`, with their hashes and generating run recorded in
-`run.json`. Before replacing them with a different selected model, move the
-old pair into that old run's `test/` directory and update its recorded paths.
+Keep one directory per actual experiment. Preserve the baseline Q7 pair in
+`runs/baseline_31836/test/`, matching the SQL processing run's layout. Every
+experiment's `test/` directory owns its archived SQL/PKL pair, with paths and
+hashes in `run.json`; do not overwrite earlier predictions. Failed submission
+attempts can be recorded in the actual experiment's metadata without a separate
+run directory.
 
-Do not keep whole-A4 submission bundles, duplicate test exports, copied input
+The top-level `results/` and `records/` hold one submission copy of a selected
+run's test pair, under the course-required filenames. They currently contain
+the already-submitted baseline. When selecting another submission, copy both
+files from the same run together and update `results/README.md` with its source.
+Keep the archived pair in that run. `records/ground_truth_dev.pkl` remains the
+shared, course-supplied dev reference; dev predictions belong in each run's
+`dev/` directory.
+
+Do not keep whole-A4 submission bundles, extra test-export copies, copied input
 answers, intermediate status downloads, or setup/preflight directories inside
 `runs/`. Useful preflight facts have been merged into `run.json`. Q4's JSON
 already includes all CSV rows and the counting convention. Q6's per-example
 analysis is retained alongside the raw dev outputs. A compressed source
 snapshot is intentional: future code edits must not change a past run's code.
-Deployment releases are temporary upload artifacts; remove local copies after
-verified deployment and run archival.
+Direct script synchronization is the default; a local `releases/` directory is
+not required. Remove unused packaging artifacts after confirming that actual
+runs retain their own source/provenance. Keep each completed run's `source.zip`.
 
 ## Environment
 

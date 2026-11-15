@@ -1,14 +1,19 @@
-# Part 2 submission outputs
+# Part 2 current submission
 
-`t5_ft_experiment_test.sql` contains the baseline's 432 test predictions in
-the order of `data/test.nl`. Its companion database records are saved as
-`../records/t5_ft_experiment_test.pkl`, using the supplied `(records, error_msgs)`
-tuple format. Both are ordinary files ready to upload to Gradescope.
+The current submission copy is **baseline_31836**, selected epoch 19, already
+submitted to Gradescope as submission `448354102`.
 
-The generating model is job 31836's selected checkpoint (epoch 19).
-`../runs/baseline_31836/run.json` records the export settings and file hashes;
-`../runs/baseline_31836/checkpoint/` contains the model and tokenizer.
-There is no second copy of these outputs inside the run directory.
+| Submission copy | Permanent experiment archive |
+| --- | --- |
+| `t5_ft_experiment_test.sql` | `../runs/baseline_31836/test/t5_ft_experiment_test.sql` |
+| `../records/t5_ft_experiment_test.pkl` | `../runs/baseline_31836/test/t5_ft_experiment_test.pkl` |
 
-Before replacing this submission with another dev-selected model, move the old
-SQL and PKL pair into that run's `test/` folder and update its paths in `run.json`.
+Both pairs have identical SHA256 hashes recorded in
+`../runs/baseline_31836/run.json`. They contain 432 predictions in `data/test.nl`
+order; the PKL uses the supplied `(records, error_msgs)` tuple format.
+
+Archive every experiment's outputs in its own `runs/<run>/test/` directory.
+To stage a different submission, copy its SQL and PKL here and into `../records/`
+together, verify both hashes, and update this source note. Keep all archived
+experiment outputs. The newer `sql_ops_v1_32887` pair is archived in that run's
+`test/` directory and has not replaced the current submission copy.

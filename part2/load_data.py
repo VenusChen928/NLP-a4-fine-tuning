@@ -9,17 +9,19 @@ from torch.nn.utils.rnn import pad_sequence
 from transformers import T5TokenizerFast
 import torch
 
+from sql_processing import encode_sql, validate_sql_preprocessing
+
 PAD_IDX = 0
 
 class T5Dataset(Dataset):
 
-    def __init__(self, data_folder, split):
+    def __init__(self, data_folder, split, sql_preprocessing = "none"):
         '''
         Skeleton for the class for performing data processing for the T5 model.
 
         Some tips for implementation:
             * You should be using the 'google-t5/t5-small' tokenizer checkpoint to tokenize both
-              the encoder and decoder output. 
+              the encoder and decoder output.
             * You want to provide the decoder some beginning of sentence token. Any extra-id on the
               T5Tokenizer should serve that purpose.
             * Class behavior should be different on the test set.
@@ -27,10 +29,16 @@ class T5Dataset(Dataset):
         # TODO
         self.tokenizer = T5TokenizerFast.from_pretrained("google-t5/t5-small")
 
-        self.encoder_ids, self.target_ids = self.process_data(data_folder, split, self.tokenizer)
+        # SQL processing: retain the selected mode for every split of this dataset
+        self.sql_preprocessing = validate_sql_preprocessing(sql_preprocessing)
 
-    def process_data(self, data_folder, split, tokenizer):
+        self.encoder_ids, self.target_ids = self.process_data(data_folder, split, self.tokenizer, sql_preprocessing = self.sql_preprocessing)
+
+    def process_data(self, data_folder, split, tokenizer, sql_preprocessing = "none"):
         # TODO
+        # SQL processing: also validate test datasets, which have no SQL targets.
+        validate_sql_preprocessing(sql_preprocessing)
+
         # Read the natural language inputs:
         input_path = os.path.join(data_folder, f"{split}.nl")
         inputs = load_lines(input_path)
@@ -54,7 +62,10 @@ class T5Dataset(Dataset):
             truncation = False
         )["input_ids"]
 
-        # Tokenize SQL targets using the same tokenizer:
+        # SQL processing: encode train/dev targets before tokenization
+        if targets is not None:
+            targets = [encode_sql(sql, sql_preprocessing) for sql in targets]
+
         if targets is None:
             target_ids = None
         else:
@@ -66,7 +77,7 @@ class T5Dataset(Dataset):
             )["input_ids"]
 
         return encoder_ids, target_ids
-    
+
     def __len__(self):
         # TODO
         return len(self.encoder_ids)
@@ -132,7 +143,7 @@ def test_collate_fn(batch):
         * batch (List[Any]): batch is a list of length batch_size, where each index contains what
                              the dataset __getitem__ function returns.
 
-    Recommended returns: 
+    Recommended returns:
         * encoder_ids: The input ids of shape BxT to be fed into the T5 encoder.
         * encoder_mask: Mask of shape BxT associated with padding tokens in the encoder input
         * initial_decoder_inputs: The very first input token to be decoder (only to be used in evaluation)
@@ -151,20 +162,20 @@ def test_collate_fn(batch):
         initial_decoder_inputs
     )
 
-def get_dataloader(batch_size, split):
+def get_dataloader(batch_size, split, sql_preprocessing = "none"):
     data_folder = 'data'
-    dset = T5Dataset(data_folder, split)
+    dset = T5Dataset(data_folder, split, sql_preprocessing = sql_preprocessing)
     shuffle = split == "train"
     collate_fn = normal_collate_fn if split != "test" else test_collate_fn
 
     dataloader = DataLoader(dset, batch_size=batch_size, shuffle=shuffle, collate_fn=collate_fn)
     return dataloader
 
-def load_t5_data(batch_size, test_batch_size):
-    train_loader = get_dataloader(batch_size, "train")
-    dev_loader = get_dataloader(test_batch_size, "dev")
-    test_loader = get_dataloader(test_batch_size, "test")
-    
+def load_t5_data(batch_size, test_batch_size, sql_preprocessing = "none"):
+    train_loader = get_dataloader(batch_size, "train", sql_preprocessing = sql_preprocessing)
+    dev_loader = get_dataloader(test_batch_size, "dev", sql_preprocessing = sql_preprocessing)
+    test_loader = get_dataloader(test_batch_size, "test", sql_preprocessing = sql_preprocessing)
+
     return train_loader, dev_loader, test_loader
 
 
