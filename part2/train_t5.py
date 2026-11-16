@@ -12,7 +12,7 @@ import time
 from t5_utils import initialize_model, initialize_optimizer_and_scheduler, save_model, load_model_from_checkpoint, setup_wandb
 from transformers import GenerationConfig
 from load_data import load_t5_data
-from utils import compute_metrics, save_queries_and_records, set_random_seeds
+from utils import compute_metrics, save_queries_and_records, set_random_seeds, select_valid_sql
 
 from sql_processing import SQL_PREPROCESSING_MODES, decode_sql, resolve_sql_preprocessing, validate_sql_preprocessing
 
@@ -192,12 +192,17 @@ def train_epoch(args, model, train_loader, optimizer, scheduler):
 
 
 def generate_sql(args, model, tokenizer, encoder_input, encoder_mask, initial_decoder_inputs):
+    # Return multiple candidates only when validity filtering is requested
+    valid = getattr(args, "valid", False)
+    num_return_sequences = args.num_beams if valid else 1
+
     generated_ids = model.generate(
         input_ids = encoder_input.to(DEVICE),
         attention_mask = encoder_mask.to(DEVICE),
         decoder_input_ids = initial_decoder_inputs.to(DEVICE),
         max_new_tokens = args.max_new_tokens,
         num_beams = args.num_beams,
+        num_return_sequences = num_return_sequences,
         do_sample = False
     )
 
@@ -207,11 +212,20 @@ def generate_sql(args, model, tokenizer, encoder_input, encoder_mask, initial_de
         clean_up_tokenization_spaces = False
     )
 
-    # Both dev evaluation and test inference receive restored, executable SQL:
+    # Restore SQL operators and keep one query per line
     queries = [decode_sql(query, args.sql_preprocessing) for query in queries]
+    queries = [query.replace("\r", " ").replace("\n", " ").strip() for query in queries]
 
-    # Keep exactly one SQL query per output line:
-    return [query.replace("\r", " ").replace("\n", " ").strip() for query in queries]
+    if len(queries) != encoder_input.shape[0] * num_return_sequences:
+        raise ValueError("Generated candidates do not match the input batch!")
+
+    # Beam candidates are grouped by question in descending sequence-score order
+    if valid:
+        queries = [select_valid_sql(queries[start:start + num_return_sequences], args.query_timeout)
+                   for start in range(0, len(queries), num_return_sequences)]
+
+    return queries
+
 
 @torch.no_grad()
 def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_path, model_record_path):
@@ -307,7 +321,8 @@ def test_inference(args, model, test_loader, model_sql_path, model_record_path):
     tokenizer = test_loader.dataset.tokenizer
     predicted_queries = []
 
-    for batch in tqdm(test_loader, desc = "Test"):
+    # Reuse the same input-only inference loop for dev and test exports
+    for batch in tqdm(test_loader, desc = getattr(args, "split", "test").capitalize()):
         encoder_input, encoder_mask, initial_decoder_inputs = batch
 
         predicted_queries.extend(
@@ -322,7 +337,7 @@ def test_inference(args, model, test_loader, model_sql_path, model_record_path):
         )
 
     if len(predicted_queries) != len(test_loader.dataset):
-        raise ValueError("The number of test predictions is incorrect!")
+        raise ValueError("The number of predictions is incorrect!")
 
     os.makedirs(os.path.dirname(model_sql_path) or ".", exist_ok = True)
     os.makedirs(os.path.dirname(model_record_path) or ".", exist_ok = True)

@@ -6,88 +6,209 @@ The reproducible baseline workflow, Burst submission steps, artifact layout,
 and assignment-table evidence are documented in
 [the Part 2 experiment guide](../hpc/burst/PART2.md).
 
-## Workspace layout
+## Code and experiment layout
 
-`data/`, `records/`, and `results/` come from the course repository.
-`tools/` and `runs/` are our additions. Keep the assignment implementation
-(`load_data.py`, `train_t5.py`, `t5_utils.py`, `utils.py`, `evaluate.py`) here.
+The baseline framework stays in `load_data.py`, `train_t5.py`, `t5_utils.py`,
+`utils.py` and `evaluate.py`. `sql_processing.py` contains the reversible SQL
+operator conversion. Model architecture and training are shared by all current
+experiments; beam width and validity filtering are inference settings.
 
-```text
-part2/
-  data/                              supplied train/dev/test inputs and database
-  records/
-    ground_truth_dev.pkl             supplied dev answers
-    t5_ft_experiment_test.pkl         current submission copy, from baseline_31836
-  results/
-    t5_ft_experiment_test.sql         current submission copy, from baseline_31836
-  tools/                             supporting scripts, not model implementation
-    baseline_smoke.py                small GPU interface/checkpoint check
-    experiment_report.py            run metadata, Q4 statistics, Q6 dev evidence
-    export_test.py                  load a saved run and call test_inference
-  runs/
-    baseline_31836/
-      checkpoint/                    epoch-19 model and its saved tokenizer
-      run.json                       configuration, scores, environment, provenance
-      history.jsonl                  all 20 epochs for learning-curve analysis
-      dev/                           predictions.sql and records.pkl
-      test/                          archived Q7 SQL/PKL pair
-      analysis/                      q4_statistics.json and dev_evidence.jsonl
-      source.zip                     exact training/export source snapshots
-      train_eval.log.gz              complete original log, compressed
-    sql_ops_v1_32887/                 same compact layout, selected epoch 20
-      test/                          this experiment's Q7 SQL/PKL pair
-```
+There are three supporting scripts, shared across experiments:
 
-The baseline's best dev Record F1 is **74.5086%** (epoch 19). The unselected
-last checkpoint is not needed for this result or Q7; it did not include
-optimizer/RNG state for exact training resumption. Only the selected model
-is retained locally. The remote original run was not changed.
+| Script | Purpose |
+| --- | --- |
+| `tools/export_test.py` | Load a saved checkpoint for dev evaluation or test export |
+| `tools/baseline_smoke.py` | Short GPU/environment check used by the Burst launcher |
+| `tools/experiment_report.py` | Training metadata, Q4 statistics and Q6 error evidence |
 
-`run.json` records the actual configuration, selected-epoch metrics, final dev
-metrics, package versions, source/data/artifact hashes, and test-export settings.
-The original remote status was stale (`running`); scheduler completion was
-observed separately. Both facts are retained, without inventing a process exit code.
+Experiment names belong in `runs/`, rather than in separate Python scripts:
 
-The SQL processing run `sql_ops_v1_32887` has best dev Record F1 **76.1490%**,
-Record EM **71.8884%**, and SQL EM **57.0815%** (epoch 20). All 20 epochs and
-the final dev outputs were verified. Its scheduler state is `CANCELLED by 0`
-after a diagnostic step failed; this happened after the results were saved.
-The original status and accounting are retained in `run.json`. Missing dev
-analysis was recovered from saved outputs without rerunning inference.
+| Run | Model source | SQL processing | Decoding | Status |
+| --- | --- | --- | --- | --- |
+| `baseline_31836` | Pretrained T5-small, fine-tuned | None | Greedy | Dev F1 74.5086%, epoch 19 |
+| `sql_ops_v1_32887` | Pretrained T5-small, fine-tuned | `operators_v1` | Greedy | Dev F1 76.1490%, epoch 20 |
+| `sql_ops_v1_beam4` | Checkpoint from `sql_ops_v1_32887` | `operators_v1` | Beam-4 | Dev completed, job 33306 |
+| `sql_ops_v1_beam4_valid` | Checkpoint from `sql_ops_v1_32887` | `operators_v1` | Beam-4 + validity | Dev 33307, test 33657; current best |
 
-### Supporting scripts and test export
+A completed training run keeps its selected `checkpoint/`, `run.json`,
+`history.jsonl`, `dev/`, `test/`, `analysis/`, `source.zip` and compressed log.
+The historical scheduler/status details remain in that run's `run.json`.
+A decoding experiment follows the same one-directory-per-experiment layout:
+`dev/` holds `predictions.sql` and `records.pkl`, and `test/` holds that version's
+required SQL/PKL pair when exported. The root `run.json` records the shared
+settings, `dev_evaluation` and `test_export`; `source.zip`,
+`dev_inference.log.gz` and `test_inference.log.gz` retain the source and logs.
+The checkpoint is referenced from the training run without another model copy.
+The paired comparison is in
+[`runs/decoding_comparison.json`](runs/decoding_comparison.json).
 
-- `baseline_smoke.py`: a small GPU training/checkpoint check.
-- `experiment_report.py`: run metadata, Q4 statistics, and Q6 dev evidence.
-- `export_test.py`: loads the compact run's saved model, tokenizer and decoding
-  settings, then calls the existing `train_t5.test_inference()` directly.
+### Dev decoding experiments
 
-The exporter reuses `T5Dataset.process_data()`, `test_collate_fn()` and the existing
-generation loop, restoring the run's saved SQL preprocessing mode. Dev and test
-share a read-only SQLite executor in `utils.py`, with 10 workers, a shared
-120-second deadline and progress-handler interruption. This prevents timed-out
-queries from leaving worker threads running after results are saved. The saved
-experiments retain their original source snapshots and results. There is no
-`--test_only` mode in `train_t5.py`.
-
-For the first test export of a newly selected compact run, from the repo root:
+Use the existing export entry point with `--split dev`. The command below uses
+the completed beam-4 + validity experiment's settings and the current directory
+layout; choose a new output directory to repeat it:
 
 ```bash
 python -B part2/tools/export_test.py \
-  --run-dir part2/runs/SELECTED_RUN \
-  --output-dir part2/runs/SELECTED_RUN/test
+  --run-dir part2/runs/sql_ops_v1_32887 \
+  --output-dir part2/runs/sql_ops_v1_beam4_valid/dev \
+  --split dev --num-beams 4 --valid --batch-size 16 --threads 4
 ```
 
-The output directory must be new. Only the required SQL/PKL pair is written.
-The existing baseline has already been exported and submitted; no regeneration
-is needed for this code cleanup. Its files and original export provenance remain
-unchanged, including the historical exporter in `source.zip`.
+For each question, beam search returns four candidates in sequence-score order.
+`--valid` selects the first candidate that executes successfully as a read-only
+SELECT/WITH query. Empty results are valid. Each check has its own five-second
+budget, adjustable with `--query-timeout`; if every candidate fails, the first
+candidate is kept. The selected SQL is evaluated with the original record
+executor and metric functions, using the same evaluation policy as the baseline.
 
-The SQL processing export is in `runs/sql_ops_v1_32887/test/`: 432 SQL predictions
-and aligned record/error entries, with 46 SQL execution errors and no timeouts.
-It uses the same CPU inference settings as the baseline. Both required filenames
-are unchanged; the experiment directory separates versions. No test score is
-available until this pair is evaluated by Gradescope.
+Without `--valid`, the same script runs ordinary beam search and keeps its
+first candidate. This was run as the ablation in `sql_ops_v1_beam4/dev/`.
+Both jobs used batch size 16, seed 42, a 512-token generation limit and an A100
+40GB GPU. The source checkpoint supplies the tokenizer and preprocessing mode.
+The exporter accepts both the compact local archive and the original Burst
+training directory. CUDA is used when available, otherwise CPU.
+
+### Dev decoding results
+
+All three rows use the epoch-20 checkpoint from `sql_ops_v1_32887` and the same
+466 dev examples. Greedy results are the existing saved outputs; no training
+or greedy generation was repeated.
+
+| Decoding | Record F1 (%) | Record EM (%) | SQL EM (%) | SQL errors | Timeouts |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Greedy | 76.1490 | 71.8884 | 57.0815 | 47 | 3 |
+| Beam-4 | 78.6717 | 74.4635 | 57.7253 | 35 | 2 |
+| Beam-4 + validity | 79.7226 | 75.1073 | 57.9399 | 14 | 1 |
+
+Beam-4 gains 2.5227 F1 percentage points over the saved greedy result. Adding
+validity filtering gains a further 1.0508 points and resolves 21 execution
+errors without introducing any new ones. Filtering changes 25 SQL predictions:
+10 examples improve in Record F1, 3 worsen and 12 keep the same score.
+
+`beam4_valid` is the preferred configuration on this dev set. Its generation
+and filtering loop took 432 seconds, versus 199 seconds for plain beam-4
+(about 2.17 times as long). These times exclude final SQL scoring and model
+loading. Total batch runtimes were 9m32s and 5m38s, respectively. Both jobs
+completed with exit code 0. The earlier one-hour requests, 33301 and 33302,
+were canceled before execution and replaced with 20-minute requests for
+backfill scheduling.
+
+The comparison retains the original evaluation policy. At dev line 353,
+greedy and beam-4 generated identical SQL, but the saved greedy execution
+timed out and the beam-4 execution succeeded. This accounts for about 0.2146
+points of the observed greedy-to-beam gain; about 2.3081 points are associated
+with changed SQL predictions. There are no record differences for unchanged
+SQL between the two beam variants.
+
+Validity does not guarantee semantic correctness. Two of its three F1
+regressions, lines 130 and 134, lose the original metric's credit for an SQL
+error returning an empty list that happened to match empty gold records.
+Line 188 replaces a previously correct result with a worse candidate.
+Candidate rejection reasons were not logged; the five-second check can reject
+SQL that succeeds under the longer final scoring budget.
+
+### Next experiments
+
+The selected dev output has 116 Record EM failures: 104 queries execute but
+return the wrong records, and 12 fail execution. There are 14 execution errors
+in total; two receive Record EM credit because empty predictions match empty
+gold records under the supplied metric. The longest processed gold SQL is 503
+tokens including special tokens, below the current 512-token generation limit.
+These checks favor improving the learned mapping from questions to SQL.
+
+The current training run reaches its best dev F1 and lowest dev loss at epoch
+20, the configured limit. The next training comparison is proposed below;
+neither run has been launched:
+
+| Proposed configuration | Maximum epochs | Learning rate | Purpose |
+| --- | ---: | ---: | --- |
+| `sql_ops_e30_lr3e4` | 30 | 3e-4 | Test a longer training and linear-decay budget |
+| `sql_ops_e30_lr1e4` | 30 | 1e-4 | Isolate the learning-rate change against the first run |
+
+Both start from the same pretrained T5-small and retain `operators_v1`, seed
+42, batch size 16, weight decay 0, one warmup epoch, linear scheduling and
+early-stopping patience 5. Keep the existing greedy dev checkpoint-selection
+rule, then evaluate each selected checkpoint with the same `beam4_valid`
+settings. Extending the epoch budget also stretches linear decay, so the first
+comparison tests that combined training schedule rather than epochs alone.
+See the [Transformers scheduler documentation](https://huggingface.co/docs/transformers/v4.40.0/en/main_classes/optimizer_schedules#transformers.get_linear_schedule_with_warmup).
+
+A single `beam8_valid` dev run on the current checkpoint is an optional cheap
+search-width check. Further data processing should follow inspection of the
+remaining executable mistakes, focusing on entity linking, time conditions
+and schema relations. Any normalization must apply consistently to train/dev
+and test, with reversible SQL values and no rules fitted to test answers.
+Architecture changes and incremental grammar constraints such as
+[PICARD](https://aclanthology.org/2021.emnlp-main.779/) are later experiments;
+the present errors are predominantly executable queries with wrong results.
+Use dev for selection, and repeat the winning training configuration with an
+additional seed if its gain is small before another final test export.
+
+### Test export
+
+The original export command still works after selecting a final run:
+
+```bash
+python -B part2/tools/export_test.py \
+  --run-dir part2/runs/SELECTED_TRAINING_RUN \
+  --output-dir part2/runs/SELECTED_TRAINING_RUN/test
+```
+
+The default split is test. The script writes the required
+`t5_ft_experiment_test.sql` and `t5_ft_experiment_test.pkl` pair. To export a
+selected decoding variant, pass its `--num-beams` and `--valid` settings again,
+using its training run as `--run-dir` and a new output directory. The output
+directory must always be new, so archived predictions cannot be overwritten.
+
+Both existing trained runs already have archived test pairs. The SQL processing
+run's pair contains 432 predictions and 46 execution errors. These historical
+pairs stay in their own run directories.
+
+The dev-selected `beam4_valid` configuration keeps both dev and test outputs in
+[`runs/sql_ops_v1_beam4_valid/`](runs/sql_ops_v1_beam4_valid/).
+Burst job **33657** completed with exit code 0 in **7m57s** on an A100 40GB.
+The existing exporter and epoch-20 checkpoint were reused. The command with
+the current directory layout is:
+
+```bash
+python -B part2/tools/export_test.py \
+  --run-dir part2/runs/sql_ops_v1_32887 \
+  --output-dir part2/runs/sql_ops_v1_beam4_valid/test \
+  --split test --num-beams 4 --valid --query-timeout 5 \
+  --batch-size 16 --threads 4
+```
+
+The archive contains 432 SQL predictions and 432 paired records/error messages
+in test-input order, with **14 SQL errors and 0 timeouts**. The saved greedy
+test outputs have 46 errors. There are 72 changed SQL predictions, 33 resolved
+errors and 1 newly introduced error; unchanged SQL has identical saved records.
+These execution checks are distinct from the Gradescope accuracy scores below.
+Plain beam-4 was evaluated on dev for the ablation and was not
+exported on test; the test configuration was selected using dev results.
+
+The archived pair stays in this experiment's `test/` directory. The current
+best pair is also copied to `results/t5_ft_experiment_test.sql` and
+`records/t5_ft_experiment_test.pkl`, with matching hashes recorded in `run.json`
+and its source identified in `results/README.md`. Upload these two files
+directly; no submission ZIP is needed. The user supplied this version's
+Gradescope result on November 15, 2026. The original Burst commands remain in the corresponding
+`dev_evaluation` and `test_export` metadata for provenance.
+
+| Test configuration | Record F1 (%) | Record EM (%) | SQL errors / 432 |
+| --- | ---: | ---: | ---: |
+| Baseline + greedy | 70.68 | 67.36 | 63 |
+| SQL operators + greedy | 73.45 | 69.21 | 46 |
+| SQL operators + beam-4 + validity | **77.66** | **72.92** | **14** |
+
+The latest screenshot reports 25/25 performance points and SQL Query EM 0.00.
+It improves Record F1 by 4.21 percentage points and Record EM by 3.71 points
+over the SQL-operator greedy submission. Values are rounded as displayed by
+Gradescope. The screenshot is retained in the selected run's `analysis/`
+directory, with its result recorded in `run.json`; it does not show a
+submission ID or verify uploaded-file hashes. SQL Query EM remains 0.00
+despite nonzero local dev SQL EM; the reason is unresolved. Do not treat that
+display alone as evidence of zero semantic accuracy or tune against it.
 
 ### Reproducing Table 1
 
@@ -121,23 +242,27 @@ with an inferred score or change predictions just to improve this display.
 
 ### Retention rules
 
-Keep one directory per actual experiment. Preserve the baseline Q7 pair in
+Keep one directory per experiment, with `dev/` and `test/` as subdirectories;
+do not create separate experiment roots for evaluation and test. Preserve the
+baseline Q7 pair in
 `runs/baseline_31836/test/`, matching the SQL processing run's layout. Every
 experiment's `test/` directory owns its archived SQL/PKL pair, with paths and
 hashes in `run.json`; do not overwrite earlier predictions. Failed submission
 attempts can be recorded in the actual experiment's metadata without a separate
 run directory.
 
-The top-level `results/` and `records/` hold one submission copy of a selected
-run's test pair, under the course-required filenames. They currently contain
-the already-submitted baseline. When selecting another submission, copy both
-files from the same run together and update `results/README.md` with its source.
+The top-level `results/` and `records/` hold the current best run's test pair,
+under the course-required filenames. They currently contain
+`sql_ops_v1_beam4_valid`. When selecting another best run, copy both files from
+that run together,
+verify both hashes and update `results/README.md` with its source.
 Keep the archived pair in that run. `records/ground_truth_dev.pkl` remains the
 shared, course-supplied dev reference; dev predictions belong in each run's
 `dev/` directory.
 
-Do not keep whole-A4 submission bundles, extra test-export copies, copied input
-answers, intermediate status downloads, or setup/preflight directories inside
+Do not create submission ZIPs. Do not keep whole-A4 submission bundles, extra
+test-export copies, copied input answers, intermediate status downloads, or
+setup/preflight directories inside
 `runs/`. Useful preflight facts have been merged into `run.json`. Q4's JSON
 already includes all CSV rows and the counting convention. Q6's per-example
 analysis is retained alongside the raw dev outputs. A compressed source

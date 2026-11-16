@@ -1,19 +1,26 @@
 # Part 2 current submission
 
-The current submission copy is **baseline_31836**, selected epoch 19, already
-submitted to Gradescope as submission `448354102`.
+The current best submission copy is **sql_ops_v1_beam4_valid**, selected by dev
+Record F1 (79.7226%). It reuses the epoch-20 checkpoint from `sql_ops_v1_32887`
+with beam width 4 and validity filtering. Test export job 33657 completed
+successfully. The user's November 15, 2026 Gradescope screenshot reports
+Record F1 **77.66**, Record EM **72.92**, SQL Query EM **0.00**, 14/432 SQL
+errors and **25/25** performance points. The screenshot and displayed results
+are retained in the experiment archive; no submission ID was supplied.
 
 | Submission copy | Permanent experiment archive |
 | --- | --- |
-| `t5_ft_experiment_test.sql` | `../runs/baseline_31836/test/t5_ft_experiment_test.sql` |
-| `../records/t5_ft_experiment_test.pkl` | `../runs/baseline_31836/test/t5_ft_experiment_test.pkl` |
+| `t5_ft_experiment_test.sql` | `../runs/sql_ops_v1_beam4_valid/test/t5_ft_experiment_test.sql` |
+| `../records/t5_ft_experiment_test.pkl` | `../runs/sql_ops_v1_beam4_valid/test/t5_ft_experiment_test.pkl` |
 
 Both pairs have identical SHA256 hashes recorded in
-`../runs/baseline_31836/run.json`. They contain 432 predictions in `data/test.nl`
-order; the PKL uses the supplied `(records, error_msgs)` tuple format.
+`../runs/sql_ops_v1_beam4_valid/run.json`. They contain 432 predictions in
+`data/test.nl` order; the PKL uses the supplied `(records, error_msgs)` tuple
+format, with 14 SQL errors and no timeouts. Upload the two files directly;
+no submission ZIP is needed.
 
-Archive every experiment's outputs in its own `runs/<run>/test/` directory.
-To stage a different submission, copy its SQL and PKL here and into `../records/`
-together, verify both hashes, and update this source note. Keep all archived
-experiment outputs. The newer `sql_ops_v1_32887` pair is archived in that run's
-`test/` directory and has not replaced the current submission copy.
+Keep each experiment's dev/test outputs under the same `runs/<run>/` directory.
+When selecting a new best version, copy its SQL and PKL here and into
+`../records/` together, verify both hashes, and update this source note.
+Historical pairs remain in `baseline_31836/test/` and `sql_ops_v1_32887/test/`.
+Baseline submission `448354102` remains recorded in its own run metadata.

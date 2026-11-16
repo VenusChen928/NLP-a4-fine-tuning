@@ -102,7 +102,25 @@ def compute_records(processed_qs: List[str], timeout_secs = 120, num_threads = 1
 
     return [item[1] for item in results], [item[2] for item in results]
 
-def compute_record(query_id, query, deadline = None):
+def select_valid_sql(candidates, timeout_secs = 5):
+    # Check candidates in beam order with a fresh execution budget for each query
+    if not candidates or not np.isfinite(timeout_secs) or timeout_secs <= 0:
+        raise ValueError("Candidates and a positive finite timeout are required")
+
+    for query in candidates:
+        _, _, error = compute_record(0, query, deadline = time.monotonic() + timeout_secs, select_only = True)
+        if not error:
+            return query
+
+    # Empty results are valid, but if every query fails retain the first candidate
+    return candidates[0]
+
+
+def compute_record(query_id, query, deadline = None, select_only = False):
+    # Validity filtering excludes empty or non-query text before execution
+    if select_only and not re.match(r"^\s*(SELECT|WITH)\b", query, flags = re.IGNORECASE):
+        return query_id, [], "Invalid SQL: expected a SELECT or WITH query"
+
     if deadline is not None and time.monotonic() >= deadline:
         return query_id, [], "Query timed out"
 
