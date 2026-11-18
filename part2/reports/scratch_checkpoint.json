@@ -1,0 +1,138 @@
+{
+  "folder": "https://drive.google.com/drive/folders/1GtJ2IgVI3lc4vqJf8JoopUNmcgOVoSiR",
+  "original_checkpoint": "runs/scratch_ec_e25_lr3e4_35002/checkpoints/scr_experiments/ec_e25_lr3e4/best",
+  "original_weights_sha256": "611caf5168cc650cbf491a4fd8cfd8804fe7238b060f41284f68188eab01f26b",
+  "verification": "Every state_dict tensor is exactly equal after reloading sharded checkpoint. No training or generation.",
+  "files": {
+    "model-00002-of-00003.safetensors": {
+      "bytes": 89170120,
+      "sha256": "4610b1b0a00eefb3d6c37e92e375cf58b4e93dc17a8c5387e12cbd2c42d2cf94"
+    },
+    "tokenizer_config.json": {
+      "bytes": 20746,
+      "sha256": "e0aff0b1de9071e30d9a60a199303b6abe916a64a19932bd1c46992279b41a1f"
+    },
+    "special_tokens_map.json": {
+      "bytes": 2543,
+      "sha256": "7a1985a994c41886db38c719d2a3d2f40606663cc19d7c5d6a85d349320e06d2"
+    },
+    "config.json": {
+      "bytes": 1577,
+      "sha256": "d9cd87cb397bc24a44731cd6203d4f2e0cffdeda95749181cafd205610451bdd"
+    },
+    "model-00003-of-00003.safetensors": {
+      "bytes": 66092992,
+      "sha256": "82305e9a3003d903e23821597c2a3198a285c9c975cb01f2e19d4439cec3e571"
+    },
+    "tokenizer.json": {
+      "bytes": 2422169,
+      "sha256": "71c33c3bf57bf2e19b4f8ac686ad8d182a79f7cd1a4921889437c453420223f1"
+    },
+    "generation_config.json": {
+      "bytes": 142,
+      "sha256": "823f9c064a20a7faab145519642406093f25094f5d642742b72b511c0d354094"
+    },
+    "run_config.json": {
+      "bytes": 917,
+      "sha256": "aea00f4772cf6d20db039d92f00a38271bc41778834f8727e227312c054a25f4"
+    },
+    "spiece.model": {
+      "bytes": 791656,
+      "sha256": "d60acb128cf7b7f2536e8f38a5b18a05535c9e14c7a355904270e15b0945ea86"
+    },
+    "README.txt": {
+      "bytes": 911,
+      "sha256": "d92d27fa58dd011136029236e05edf9961ed7192e7be2827e3b3991403e12db3"
+    },
+    "model.safetensors.index.json": {
+      "bytes": 11791,
+      "sha256": "71c6dc1bb377e98ab0d0b7152edd852db13f3491971c30f8a1e6c3e491962608"
+    },
+    "model-00001-of-00003.safetensors": {
+      "bytes": 86778712,
+      "sha256": "ae421fa7bd764df8e9c47fa17c317b653d05bb306e507e270cbc562ba5d69691"
+    }
+  },
+  "remote_files": [
+    {
+      "id": "1tiTJmTIZ2NC7u3HiSABUkimmWDIB9OYs",
+      "name": "model-00001-of-00003.safetensors",
+      "bytes": 86778712,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "1qY3Z9JQNym_Oa00llkB6QUiJ3NU-9O7y",
+      "name": "model-00002-of-00003.safetensors",
+      "bytes": 89170120,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "1Ncib1ITBM4D4UvObRb9zUVpQbI3bDRN6",
+      "name": "model-00003-of-00003.safetensors",
+      "bytes": 66092992,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "12H4ARdTCYk5rHcmVvhz3CKoqVEN3LXDy",
+      "name": "model.safetensors.index.json",
+      "bytes": 11791,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "1TFQ7BXxlCjPoRMN7WtqNDSUtcl-c8wg0",
+      "name": "config.json",
+      "bytes": 1577,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "1h3Wd_fnzM9RbBnOfW5nr5RlCR5QSTWQs",
+      "name": "generation_config.json",
+      "bytes": 142,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "1PTd2BoBIzZ-ygzo-y7DUIx6SU8dCXKG2",
+      "name": "spiece.model",
+      "bytes": 791656,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "1_kVPD95WWbkhAWDPwFVFhfzsp0SPl2-Z",
+      "name": "tokenizer.json",
+      "bytes": 2422169,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "1J0wFJRoiRGlqJgzFP7-V6-sZf0Ww37T0",
+      "name": "tokenizer_config.json",
+      "bytes": 20746,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "1dYGYX8ufSbE41alxDPnUkcpbMjNNZq7i",
+      "name": "special_tokens_map.json",
+      "bytes": 2543,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "1U5gi1y2Sxua5Xgi2862LcXKC7U1O6HbC",
+      "name": "run_config.json",
+      "bytes": 917,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "1yZGtozDIHC1t_RW8xrA9hJW7O9PGFM0o",
+      "name": "README.txt",
+      "bytes": 911,
+      "sharing": "anyone reader"
+    },
+    {
+      "id": "1aErrufMTLkgg8hGtBR5dt-w0zf6LFBOb",
+      "name": "manifest.json",
+      "bytes": 1962,
+      "sharing": "anyone reader"
+    }
+  ],
+  "remote_verification": "Connector confirmed file names, sizes and reader permissions. It did not expose remote checksums.",
+  "packaging": "Standard Hugging Face safetensors shards; every reloaded state_dict tensor was checked exactly equal to the original weights before upload."
+}

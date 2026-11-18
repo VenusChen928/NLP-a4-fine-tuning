@@ -21,12 +21,14 @@ PAD_IDX = 0
 
 def get_args():
     '''
-    Arguments for training. You may choose to change or extend these as you see fit.
+    Arguments for training. You may choose to change or extend these as you see fit
     '''
     parser = argparse.ArgumentParser(description='T5 training loop')
 
     # Model hyperparameters:
-    parser.add_argument('--finetune', action='store_true', help="Whether to finetune T5 or not")
+    model_group = parser.add_mutually_exclusive_group(required = True)
+    model_group.add_argument('--finetune', action = 'store_true', help = "Finetune pretrained T5-small")
+    model_group.add_argument('--scratch', action = 'store_true', help = "Train T5-small from random weights")
 
     # Training hyperparameters:
     parser.add_argument('--optimizer_type', type = str, default = "AdamW", choices = ["AdamW"],
@@ -47,6 +49,11 @@ def get_args():
 
     parser.add_argument('--patience_epochs', type = int, default = 5,
                         help = "If validation performance stops improving, how many epochs should we wait before stopping?")
+
+    # Scratch may need time to learn SQL before dev F1 starts improving:
+    # The default preserves the existing fine-tuning stopping rule
+    parser.add_argument('--min_n_epochs', type = int, default = 1,
+                        help = "Minimum number of epochs before early stopping is allowed")
 
     parser.add_argument('--use_wandb', action = 'store_true',
                         help = "If set, we will use wandb to keep track of experiments")
@@ -77,14 +84,14 @@ def get_args():
 
     args = parser.parse_args()
 
-    if not args.finetune:
-        parser.error("This baseline implementation requires --finetune!")
-
     if not args.eval_only and args.max_n_epochs < 1:
         parser.error("--max_n_epochs must be at least 1 for training!")
 
     if args.patience_epochs < 1:
         parser.error("--patience_epochs must be at least 1!")
+
+    if args.min_n_epochs < 1 or (not args.eval_only and args.min_n_epochs > args.max_n_epochs):
+        parser.error("--min_n_epochs must be positive and cannot exceed --max_n_epochs for training!")
 
     if args.max_new_tokens < 1 or args.num_beams < 1:
         parser.error("--max_new_tokens and --num_beams must be positive!")
@@ -153,7 +160,8 @@ def train(args, model, train_loader, dev_loader, optimizer, scheduler):
             with open(os.path.join(checkpoint_dir, 'best_metrics.json'), 'w', encoding='utf-8') as f:
                 json.dump(epoch_metrics, f, indent=2)
 
-        if epochs_since_improvement >= args.patience_epochs:
+        # Keep selecting the best checkpoint throughout the minimum training period
+        if epoch + 1 >= args.min_n_epochs and epochs_since_improvement >= args.patience_epochs:
             break
 
 def train_epoch(args, model, train_loader, optimizer, scheduler):
@@ -232,11 +240,11 @@ def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_pa
     '''
     You must implement the evaluation loop to be using during training. We recommend keeping track
     of the model loss on the SQL queries, the metrics compute_metrics returns (save_queries_and_records should be helpful)
-    and the model's syntax error rate.
+    and the model's syntax error rate
 
     To compute non-loss metrics, you will need to perform generation with the model. Greedy decoding or beam search
     should both provide good results. If you find that this component of evaluation takes too long with your compute,
-    we found the cross-entropy loss (in the evaluation set) to be well (albeit imperfectly) correlated with F1 performance.
+    we found the cross-entropy loss (in the evaluation set) to be well (albeit imperfectly) correlated with F1 performance
     '''
     # TODO
     model.eval()
@@ -315,7 +323,7 @@ def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_pa
 def test_inference(args, model, test_loader, model_sql_path, model_record_path):
     '''
     You must implement inference to compute your model's generated SQL queries and its associated
-    database records. Implementation should be very similar to eval_epoch.
+    database records. Implementation should be very similar to eval_epoch
     '''
     model.eval()
     tokenizer = test_loader.dataset.tokenizer
@@ -347,7 +355,10 @@ def test_inference(args, model, test_loader, model_sql_path, model_record_path):
 def main():
     # Get key arguments
     args = get_args()
-    checkpoint_dir = os.path.join("checkpoints", "ft_experiments", args.experiment_name)
+
+    # Keep scratch checkpoints and dev outputs separate from fine-tuning runs
+    model_type = "ft" if args.finetune else "scr"
+    checkpoint_dir = os.path.join("checkpoints", f"{model_type}_experiments", args.experiment_name)
 
     if args.eval_only:
         with open(os.path.join(checkpoint_dir, "run_config.json"), encoding = "utf-8") as f:
@@ -367,14 +378,15 @@ def main():
     train_loader, dev_loader, test_loader = load_t5_data(args.batch_size, args.test_batch_size, sql_preprocessing = args.sql_preprocessing)
 
     if not args.eval_only:
-        # A new training run must not overwrite an existing experiment.
+        # A new training run must not overwrite an existing experiment
         os.makedirs(checkpoint_dir, exist_ok=False)
 
         model = initialize_model(args)
-        # Save the actual model and optimization configuration for Q5.
+        # Save the actual model and optimization configuration for Q5
         run_config = {
             **vars(args),
             "base_model_name": "google-t5/t5-small",
+            "initialization": "pretrained" if args.finetune else "random",
             "base_model_revision": getattr(model.config, "_commit_hash", None),
             "total_parameters": sum(p.numel() for p in model.parameters()),
             "trainable_parameters": sum(p.numel() for p in model.parameters() if p.requires_grad),
@@ -402,8 +414,8 @@ def main():
     model.eval()
 
     # Dev set
-    dev_sql_path = os.path.join("results", f"t5_ft_{args.experiment_name}_dev.sql")
-    dev_record_path = os.path.join("records", f"t5_ft_{args.experiment_name}_dev.pkl")
+    dev_sql_path = os.path.join("results", f"t5_{model_type}_{args.experiment_name}_dev.sql")
+    dev_record_path = os.path.join("records", f"t5_{model_type}_{args.experiment_name}_dev.pkl")
 
     dev_loss, record_f1, record_em, sql_em, error_rate = eval_epoch(
         args,
@@ -453,8 +465,10 @@ def main():
 
     # Test set
     if args.run_test:
-        test_sql_path = os.path.join("results", "t5_ft_experiment_test.sql")
-        test_record_path = os.path.join("records", "t5_ft_experiment_test.pkl")
+        # The assignment uses the ft prefix for both required submission names
+        test_name = "t5_ft_experiment_test" if args.finetune else "t5_ft_experiment_ec_test"
+        test_sql_path = os.path.join("results", f"{test_name}.sql")
+        test_record_path = os.path.join("records", f"{test_name}.pkl")
 
         test_inference(
             args,

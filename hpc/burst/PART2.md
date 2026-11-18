@@ -9,8 +9,9 @@ run records; never reuse a run directory for another experiment.
 
 The tree below is the raw **remote job working layout**. Completed local
 experiments use the compact layout in [the Part 2 README](../../part2/README.md).
-Local archives retain only the selected checkpoint and one copy of each output;
+Fine-tuned local archives retain the selected checkpoint and one copy of each output;
 source and logs are compressed, and metadata are consolidated in `run.json`.
+Scratch archives retain native checkpoint/output paths and `.log.gz` logs.
 The helper scripts live in `part2/tools/` in the repository and are copied into
 the flat `source/` folder for an HPC job.
 
@@ -90,7 +91,7 @@ mkdir -p part2/runs part2/slurm
 ```
 
 First inspect current course partition limits and the prepared Part 2
-environment. The planned formal allocation is one A100, four CPU threads,
+environment. The default full-training allocation is one A100, four CPU threads,
 32 GB RAM and four hours. Override the time limit to 20 minutes for smoke.
 These are requested limits, not an estimate of elapsed training time.
 
@@ -118,6 +119,56 @@ baseline command. The smoke gate verifies the saved mode and lossless target
 round trips before starting an independent pretrained T5-small training run.
 The existing no-argument baseline mode remains supported.
 
+The optional fourth pipeline argument sets the maximum epoch budget, defaulting
+to 20. The 30-epoch experiment reuses the same scripts and pretrained model:
+
+```bash
+sbatch --export=ALL --job-name=a4-sql-ops-e30 "$source_root/hpc/burst/part2_pipeline.sbatch" "$source_root" sql_ops_e30_lr3e4 operators_v1 30
+```
+
+It keeps learning rate `3e-4`, patience 5 and all other training settings.
+Increasing the maximum epochs also stretches the existing linear learning-rate
+decay. The run is archived as `runs/sql_ops_e30_lr3e4_<jobid>/`; its greedy dev
+outputs and subsequent `dev/beam4_valid/` evaluation share this training root.
+
+The fifth pipeline argument sets the learning rate (default `3e-4`). The sixth
+selects an automatic post-training dev evaluation (`none` by default, or
+`beam4_valid`). For the learning-rate comparison:
+
+```bash
+sbatch --export=ALL --job-name=a4-e30-lr1e4 "$source_root/hpc/burst/part2_pipeline.sbatch" "$source_root" sql_ops_e30_lr1e4 operators_v1 30 1e-4 beam4_valid
+```
+
+The checkpoint is still selected by greedy dev Record F1. On successful
+training, the same allocation loads that checkpoint and writes beam-4 +
+validity predictions and metrics to `dev/beam4_valid/`, with a five-second
+validity timeout and batch size 16. `dev_beam4_valid.log` and the final run
+report retain the evaluation evidence. This mode never generates test output.
+For standalone `part2.sbatch`, the corresponding optional arguments are
+maximum epochs, learning rate and post-training dev mode after preprocessing.
+
+### Scratch initialization
+
+The final scratch run used the same architecture with random weights:
+
+```bash
+sbatch --export=ALL --time=02:00:00 --job-name=a4-scr-e25 \
+  "$source_root/hpc/burst/part2_pipeline.sbatch" "$source_root" \
+  ec_e25_lr3e4 operators_v1 25 3e-4 none scratch 20 20
+```
+
+The trailing pipeline arguments are initialization (`finetune` or `scratch`),
+minimum epochs and patience. Defaults remain `finetune 1 5`. Scratch uses a
+separate smoke gate and `checkpoints/scr_experiments/` output tree; full training
+starts independently after smoke. Both modes use the existing default tokenizer.
+The epoch budget changes the horizon of linear learning-rate decay. Saved weights
+support inference, not an exact optimizer/RNG resume.
+
+All planned runs are complete. See [the final experiment summary](../../part2/EXPERIMENTS.md)
+for verified metrics, status qualifications and selected outputs. Scratch job
+35002 selected epoch 23; dev job 35419 and test job 36063 used beam-4 + validity.
+The original per-run status snapshots and source archives remain available locally.
+
 The standalone commands below remain useful for later debugging or experiments:
 
 ```bash
@@ -125,7 +176,7 @@ cd /scratch/yc7009/projects/assignment4
 mkdir -p part2/runs part2/slurm
 source_root=/scratch/yc7009/projects/assignment4
 sbatch --job-name=a4-t5-smoke --time=00:20:00 "$source_root/hpc/burst/part2.sbatch" smoke "$source_root"
-# Inspect smoke JSON, log, CUDA memory, and sacct exit status before baseline.
+# Inspect smoke JSON, log, CUDA memory, and sacct exit status before baseline
 sbatch "$source_root/hpc/burst/part2.sbatch" baseline "$source_root"
 ```
 

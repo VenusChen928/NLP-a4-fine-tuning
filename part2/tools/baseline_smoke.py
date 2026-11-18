@@ -43,10 +43,15 @@ def select_smoke_indices(dataset, sql_path, count, sql_preprocessing, longest_fi
 
 
 def main():
-    # Read the preprocessing mode
+    # Read the preprocessing and initialization modes:
+    # Existing smoke commands continue to use pretrained weights by default
     parser = argparse.ArgumentParser(description = __doc__)
     parser.add_argument('--sql_preprocessing', choices = SQL_PREPROCESSING_MODES, default = 'none')
-    sql_preprocessing = parser.parse_args().sql_preprocessing
+    model_group = parser.add_mutually_exclusive_group()
+    model_group.add_argument('--finetune', action = 'store_true')
+    model_group.add_argument('--scratch', action = 'store_true')
+    options = parser.parse_args()
+    sql_preprocessing = options.sql_preprocessing
 
     assert torch.cuda.is_available(), 'Smoke test requires the allocated GPU'
     set_random_seeds(42)
@@ -73,7 +78,7 @@ def main():
 
     # Run two optimizer steps
     args = SimpleNamespace(
-        finetune = True, experiment_name = 'smoke', optimizer_type = 'AdamW',
+        finetune = not options.scratch, experiment_name = 'smoke', optimizer_type = 'AdamW',
         learning_rate = 3e-4, weight_decay = 0.0, scheduler_type = 'none', max_n_epochs = 1,
         num_warmup_epochs = 0, max_new_tokens = 512, num_beams = 1, sql_preprocessing = sql_preprocessing
     )
@@ -83,7 +88,8 @@ def main():
     assert torch.isfinite(torch.tensor(loss)), 'Non-finite training loss'
 
     # Save and reload the model and preprocessing mode
-    checkpoint_dir = 'checkpoints/ft_experiments/smoke'
+    model_type = 'ft' if args.finetune else 'scr'
+    checkpoint_dir = f'checkpoints/{model_type}_experiments/smoke'
     save_model(checkpoint_dir, model, best = True)
 
     config_path = Path(checkpoint_dir) / 'run_config.json'
@@ -109,6 +115,7 @@ def main():
     metrics = eval_epoch(args, model, dev_loader, 'reports/smoke_gold.sql', 'results/smoke_dev.sql', 'reports/smoke_gold.pkl', 'records/smoke_dev.pkl')
 
     report = {'purpose': 'interface validation only; not a baseline result',
+        'initialization': 'pretrained' if args.finetune else 'random',
         'train_indices': train_indices, 'dev_indices': dev_indices, 'optimizer_steps': 2,
         'train_loss': loss, 'dev_metrics': dict(zip(
             ['loss', 'record_f1', 'record_em', 'sql_em', 'error_rate'], map(float, metrics))),

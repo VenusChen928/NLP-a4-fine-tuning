@@ -1,0 +1,286 @@
+{
+  "as_of": "2026-11-18",
+  "dev_metric_source": "Supplied metric functions on saved SQL/PKL; no SQL re-execution or model generation. Pilot uses stored reports.",
+  "dev_results": [
+    {
+      "run": "baseline_31836",
+      "decoding": "greedy",
+      "selected_epoch": 19,
+      "max_epochs": 20,
+      "learning_rate": 0.0003,
+      "sql_em": 0.5536480686695279,
+      "record_em": 0.7017167381974249,
+      "record_f1": 0.7450862742700668,
+      "sql_errors": 65,
+      "sql_timeouts": 3,
+      "sql_path": "runs/baseline_31836/dev/predictions.sql",
+      "records_path": "runs/baseline_31836/dev/records.pkl",
+      "sql_sha256": "bacc9b30400f7d391c44800913f37930efb59becd2609dc952710815f2fc6136",
+      "records_sha256": "c260c59d2fe997b74f03330498e3cfee625bf0e247ee7c87e9096e9b6d0f6f0b"
+    },
+    {
+      "run": "scratch_ec_e20_lr3e4_34933",
+      "decoding": "greedy",
+      "selected_epoch": 20,
+      "max_epochs": 20,
+      "learning_rate": 0.0003,
+      "sql_em": 0.4184549356223176,
+      "record_em": 0.5536480686695279,
+      "record_f1": 0.5860922615883406,
+      "sql_errors": 33,
+      "sql_timeouts": 1,
+      "sql_path": "runs/scratch_ec_e20_lr3e4_34933/results/t5_scr_ec_e20_lr3e4_dev.sql",
+      "records_path": "runs/scratch_ec_e20_lr3e4_34933/records/t5_scr_ec_e20_lr3e4_dev.pkl",
+      "sql_sha256": "c6738a79bd64e2ddf4c22f8aa030f9c9f1908fb11fe1fdf81ca0fcf6faa48542",
+      "records_sha256": "ce51a7ade25d3fd4e596d15297074b65b51b000ef7e436496db1a20b73298a26"
+    },
+    {
+      "run": "scratch_ec_e20_lr3e4_34933",
+      "decoding": "beam4_valid",
+      "selected_epoch": 20,
+      "max_epochs": 20,
+      "learning_rate": 0.0003,
+      "sql_em": 0.43991416309012876,
+      "record_em": 0.5686695278969958,
+      "record_f1": 0.6013832950039982,
+      "sql_errors": 10,
+      "sql_timeouts": 0,
+      "sql_path": "runs/scratch_ec_e20_lr3e4_34933/dev/beam4_valid/predictions.sql",
+      "records_path": "runs/scratch_ec_e20_lr3e4_34933/dev/beam4_valid/records.pkl",
+      "sql_sha256": "121e8bc318c1f97820851a908e6f5cf83571095162a49d2550ebd49965b51e9a",
+      "records_sha256": "c5b32c3ecaee13b214176945ea2072615b068a41b43e669b165bb12b3e5e4c61"
+    },
+    {
+      "run": "scratch_ec_e25_lr3e4_35002",
+      "decoding": "greedy",
+      "selected_epoch": 23,
+      "max_epochs": 25,
+      "learning_rate": 0.0003,
+      "sql_em": 0.44420600858369097,
+      "record_em": 0.5836909871244635,
+      "record_f1": 0.6168824567342519,
+      "sql_errors": 31,
+      "sql_timeouts": 0,
+      "sql_path": "runs/scratch_ec_e25_lr3e4_35002/results/t5_scr_ec_e25_lr3e4_dev.sql",
+      "records_path": "runs/scratch_ec_e25_lr3e4_35002/records/t5_scr_ec_e25_lr3e4_dev.pkl",
+      "sql_sha256": "54d510c44de57b429325a117124c876efd721631b88665291f79463dc59bba95",
+      "records_sha256": "7f10f23f1ad156d658ac17d40af50e2d601179ae73070146688e0902324d2145"
+    },
+    {
+      "run": "scratch_ec_e25_lr3e4_35002",
+      "decoding": "beam4_valid",
+      "selected_epoch": 23,
+      "max_epochs": 25,
+      "learning_rate": 0.0003,
+      "sql_em": 0.45064377682403434,
+      "record_em": 0.5793991416309013,
+      "record_f1": 0.618842533473483,
+      "sql_errors": 7,
+      "sql_timeouts": 0,
+      "sql_path": "runs/scratch_ec_e25_lr3e4_35002/dev/beam4_valid/predictions.sql",
+      "records_path": "runs/scratch_ec_e25_lr3e4_35002/dev/beam4_valid/records.pkl",
+      "sql_sha256": "46ed8e773b9a2b12aaa887c741ccd94caf82ccd17f0afef8240aa177e945734c",
+      "records_sha256": "87eebc65f94e921bc649ede06b21c814a03f51f3d987317b6a84d50fc4b1c91e"
+    },
+    {
+      "run": "sql_ops_e30_lr1e4_33954",
+      "decoding": "greedy",
+      "selected_epoch": 30,
+      "max_epochs": 30,
+      "learning_rate": 0.0001,
+      "sql_em": 0.4613733905579399,
+      "record_em": 0.6244635193133047,
+      "record_f1": 0.7019935456883397,
+      "sql_errors": 59,
+      "sql_timeouts": 1,
+      "sql_path": "runs/sql_ops_e30_lr1e4_33954/dev/predictions.sql",
+      "records_path": "runs/sql_ops_e30_lr1e4_33954/dev/records.pkl",
+      "sql_sha256": "87e54a98b89d8d3e18821b064b822455cb528a2356c9be42c45313a8547ca37d",
+      "records_sha256": "918123dd2a12997fa8703d81fdde1dd9251eb7c4f6fc303c9890f076571b6e9f"
+    },
+    {
+      "run": "sql_ops_e30_lr1e4_33954",
+      "decoding": "beam4_valid",
+      "selected_epoch": 30,
+      "max_epochs": 30,
+      "learning_rate": 0.0001,
+      "sql_em": 0.4871244635193133,
+      "record_em": 0.6609442060085837,
+      "record_f1": 0.7501627446292081,
+      "sql_errors": 14,
+      "sql_timeouts": 0,
+      "sql_path": "runs/sql_ops_e30_lr1e4_33954/dev/beam4_valid/predictions.sql",
+      "records_path": "runs/sql_ops_e30_lr1e4_33954/dev/beam4_valid/records.pkl",
+      "sql_sha256": "d0ab82d620349492351763bb3e0622cb16fc92b77c797e47927126e408b52877",
+      "records_sha256": "03d8918950b7a55fd6bf36889cb0681eaebc3a9667b65e402a7814509bcd41de"
+    },
+    {
+      "run": "sql_ops_e30_lr3e4_33756",
+      "decoding": "greedy",
+      "selected_epoch": 29,
+      "max_epochs": 30,
+      "learning_rate": 0.0003,
+      "sql_em": 0.6802575107296137,
+      "record_em": 0.8283261802575107,
+      "record_f1": 0.8446587655607445,
+      "sql_errors": 35,
+      "sql_timeouts": 4,
+      "sql_path": "runs/sql_ops_e30_lr3e4_33756/dev/predictions.sql",
+      "records_path": "runs/sql_ops_e30_lr3e4_33756/dev/records.pkl",
+      "sql_sha256": "14a1f1aa73f426abfdf8a9e58e9b26245684fafc8e4a4ed4162b33c69d9aca24",
+      "records_sha256": "42e096553c489e9c147f73c691a3c700f4ecded71fcb751422d93bd673d59438"
+    },
+    {
+      "run": "sql_ops_e30_lr3e4_33756",
+      "decoding": "beam4_valid",
+      "selected_epoch": 29,
+      "max_epochs": 30,
+      "learning_rate": 0.0003,
+      "sql_em": 0.6909871244635193,
+      "record_em": 0.8454935622317596,
+      "record_f1": 0.8645673906901145,
+      "sql_errors": 17,
+      "sql_timeouts": 2,
+      "sql_path": "runs/sql_ops_e30_lr3e4_33756/dev/beam4_valid/predictions.sql",
+      "records_path": "runs/sql_ops_e30_lr3e4_33756/dev/beam4_valid/records.pkl",
+      "sql_sha256": "839a66c26ade9faec17bd0c43523ab80fc9f273f759d1a1caa2188e71800e65d",
+      "records_sha256": "16cd099821b822938b46a0d04e4c3c0f51c4b064171d7fcc2637a1f8cb01e0c7"
+    },
+    {
+      "run": "sql_ops_v1_32887",
+      "decoding": "greedy",
+      "selected_epoch": 20,
+      "max_epochs": 20,
+      "learning_rate": 0.0003,
+      "sql_em": 0.5708154506437768,
+      "record_em": 0.7188841201716738,
+      "record_f1": 0.7614903703742603,
+      "sql_errors": 47,
+      "sql_timeouts": 3,
+      "sql_path": "runs/sql_ops_v1_32887/dev/predictions.sql",
+      "records_path": "runs/sql_ops_v1_32887/dev/records.pkl",
+      "sql_sha256": "267259eed9ec33cb1cd3953ca4b40a2ab9c8397014ca1b4d07c853203614264f",
+      "records_sha256": "046c78e628e7c58bb0f639ed05001893e0e5b4cf757ce304d0620741af993e98"
+    },
+    {
+      "run": "sql_ops_v1_beam4",
+      "decoding": "beam4",
+      "selected_epoch": 20,
+      "max_epochs": null,
+      "learning_rate": null,
+      "sql_em": 0.5772532188841202,
+      "record_em": 0.7446351931330472,
+      "record_f1": 0.7867173717349253,
+      "sql_errors": 35,
+      "sql_timeouts": 2,
+      "sql_path": "runs/sql_ops_v1_beam4/dev/predictions.sql",
+      "records_path": "runs/sql_ops_v1_beam4/dev/records.pkl",
+      "sql_sha256": "c809dba638a70291fdf4d08312b517f69af0f2000a1b622d4c613aa02d137e48",
+      "records_sha256": "a1ac211ce3b1189e1225e26d93eb4732911cb0b830137cf1044bf168154b9149"
+    },
+    {
+      "run": "sql_ops_v1_beam4_valid",
+      "decoding": "beam4_valid",
+      "selected_epoch": 20,
+      "max_epochs": null,
+      "learning_rate": null,
+      "sql_em": 0.5793991416309013,
+      "record_em": 0.7510729613733905,
+      "record_f1": 0.7972255769499191,
+      "sql_errors": 14,
+      "sql_timeouts": 1,
+      "sql_path": "runs/sql_ops_v1_beam4_valid/dev/predictions.sql",
+      "records_path": "runs/sql_ops_v1_beam4_valid/dev/records.pkl",
+      "sql_sha256": "2fdf9491372610493c511a0320b9c2f821cf82d3de927f8b185156b2c4d5c62d",
+      "records_sha256": "64889aba2bb8a05b1d7e60000c1c4245da408f68ba1a0cfc6629ced85d831f4a"
+    },
+    {
+      "run": "sql_ops_v1_beam8_valid",
+      "decoding": "beam8_valid",
+      "selected_epoch": 20,
+      "max_epochs": null,
+      "learning_rate": null,
+      "sql_em": 0.5793991416309013,
+      "record_em": 0.7467811158798283,
+      "record_f1": 0.7915471352441161,
+      "sql_errors": 13,
+      "sql_timeouts": 1,
+      "sql_path": "runs/sql_ops_v1_beam8_valid/dev/predictions.sql",
+      "records_path": "runs/sql_ops_v1_beam8_valid/dev/records.pkl",
+      "sql_sha256": "790c7518191ea8e0dabb9f4058121ac564d426a18644543a3897511d57e11a20",
+      "records_sha256": "0a3725bab86b657ba1584ebc6c7fa16f3c95b0df1454ffb7e614cd77229ac64d"
+    },
+    {
+      "run": "scratch_ec_pilot_e10_lr1e3_34503",
+      "decoding": "greedy",
+      "selected_epoch": 1,
+      "max_epochs": 10,
+      "learning_rate": 0.001,
+      "sql_em": 0.0,
+      "record_em": 0.11802575107296137,
+      "record_f1": 0.11802575048283262,
+      "sql_errors": 466,
+      "sql_timeouts": 0,
+      "evidence": "runs/scratch_ec_pilot_e10_lr1e3_34503/reports/dev_evidence.jsonl",
+      "verification": "Stored best metrics; all per-example report execution errors checked."
+    }
+  ],
+  "selected_submissions": [
+    {
+      "model": "finetuned",
+      "run": "sql_ops_e30_lr3e4_33756",
+      "epoch": 29,
+      "decoding": "beam4_valid",
+      "test_scores_percent": {
+        "record_f1": 83.37,
+        "record_em": 80.79,
+        "sql_em": 0.0
+      },
+      "test_score_source": "Gradescope results supplied by user; test gold is unavailable locally.",
+      "sql_errors": 16,
+      "sql_timeouts": 1,
+      "files": {
+        "sql": {
+          "path": "results/t5_ft_experiment_test.sql",
+          "archive": "runs/sql_ops_e30_lr3e4_33756/test/t5_ft_experiment_test.sql",
+          "sha256": "e4bdceeec625bc953764c179df6fe379cd403bf3f3f0927baef5e8dca75407f7"
+        },
+        "pkl": {
+          "path": "records/t5_ft_experiment_test.pkl",
+          "archive": "runs/sql_ops_e30_lr3e4_33756/test/t5_ft_experiment_test.pkl",
+          "sha256": "0db60c30e5b5e4565849047725b13589e7a5172171227c62ff7258deabccf098"
+        }
+      }
+    },
+    {
+      "model": "scratch",
+      "run": "scratch_ec_e25_lr3e4_35002",
+      "epoch": 23,
+      "decoding": "beam4_valid",
+      "test_scores_percent": {
+        "record_f1": 53.39,
+        "record_em": 50.23,
+        "sql_em": 0.0
+      },
+      "test_score_source": "Gradescope results supplied by user; test gold is unavailable locally.",
+      "sql_errors": 8,
+      "sql_timeouts": 2,
+      "files": {
+        "sql": {
+          "path": "results/t5_ft_experiment_ec_test.sql",
+          "archive": "runs/scratch_ec_e25_lr3e4_35002/test/beam4_valid/t5_ft_experiment_ec_test.sql",
+          "sha256": "e203579b551ef55a060d15d49a39adaba67b093501dc571d6d3ae77a240a24e0"
+        },
+        "pkl": {
+          "path": "records/t5_ft_experiment_ec_test.pkl",
+          "archive": "runs/scratch_ec_e25_lr3e4_35002/test/beam4_valid/t5_ft_experiment_ec_test.pkl",
+          "sha256": "825a9242d07600d4fbb426aa24c0ecdc7869d91769436ae862256dcf4d1533c3"
+        }
+      }
+    }
+  ],
+  "checkpoint_folders": {
+    "finetuned": "https://drive.google.com/drive/folders/1QnYX8-S_jJCA4kNl6YQQJ9IN0Y2IZDas",
+    "scratch": "https://drive.google.com/drive/folders/1GtJ2IgVI3lc4vqJf8JoopUNmcgOVoSiR"
+  }
+}

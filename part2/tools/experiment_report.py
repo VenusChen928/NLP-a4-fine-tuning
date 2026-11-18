@@ -128,7 +128,7 @@ def data_statistics(data_folder = 'data', tokenizer_path = 'google-t5/t5-small',
     return report
 
 
-def prepare(experiment_name = 'baseline_v1', sql_preprocessing = 'none'):
+def prepare(experiment_name = 'baseline_v1', sql_preprocessing = 'none', model_mode = 'finetune'):
     import torch
 
     # Check the release and allocated device
@@ -140,6 +140,7 @@ def prepare(experiment_name = 'baseline_v1', sql_preprocessing = 'none'):
     record = {
         'status': 'running', 'kind': os.environ['A4_RUN_KIND'],
         'experiment_name': experiment_name, 'sql_preprocessing': validate_sql_preprocessing(sql_preprocessing),
+        'model_mode': model_mode, 'initialization': 'pretrained' if model_mode == 'finetune' else 'random',
         'started_at_utc': datetime.now(timezone.utc).isoformat(),
         'job_id': os.environ.get('SLURM_JOB_ID'),
         'partition': os.environ.get('SLURM_JOB_PARTITION'),
@@ -160,17 +161,17 @@ def prepare(experiment_name = 'baseline_v1', sql_preprocessing = 'none'):
     print(json.dumps(record, indent = 2))
 
 
-def dev_evidence(experiment_name = 'baseline_v1'):
+def dev_evidence(experiment_name = 'baseline_v1', model_type = 'ft'):
     from utils import compute_record_F1
 
     # Load restored predictions and original gold answers
-    predictions = Path(f'results/t5_ft_{experiment_name}_dev.sql').read_text().splitlines()
+    predictions = Path(f'results/t5_{model_type}_{experiment_name}_dev.sql').read_text().splitlines()
     questions = Path('data/dev.nl').read_text().splitlines()
     gold_sql = Path('data/dev.sql').read_text().splitlines()
 
     with open('records/ground_truth_dev.pkl', 'rb') as f:
         gold_records, _ = pickle.load(f)
-    with open(f'records/t5_ft_{experiment_name}_dev.pkl', 'rb') as f:
+    with open(f'records/t5_{model_type}_{experiment_name}_dev.pkl', 'rb') as f:
         predicted_records, errors = pickle.load(f)
 
     if not len(predictions) == len(questions) == len(gold_sql) == len(gold_records) == len(predicted_records) == len(errors):
@@ -225,14 +226,21 @@ def finalize(exit_code, experiment_name = None):
         if exit_code == 0:
             if os.environ['A4_RUN_KIND'] != 'smoke':
                 experiment_name = experiment_name or record.get('experiment_name', 'baseline_v1')
-                checkpoint = Path('checkpoints/ft_experiments') / experiment_name
+
+                # Read the selected mode, with the original default for older runs
+                model_type = 'ft' if record.get('model_mode', 'finetune') == 'finetune' else 'scr'
+                checkpoint = Path(f'checkpoints/{model_type}_experiments') / experiment_name
                 config = json.loads((checkpoint / 'run_config.json').read_text())
                 sql_preprocessing = resolve_sql_preprocessing(config)
 
                 record['experiment_name'] = experiment_name
                 record['sql_preprocessing'] = sql_preprocessing
-                record['dev_analysis'] = dev_evidence(experiment_name = experiment_name)
+                record['dev_analysis'] = dev_evidence(experiment_name = experiment_name, model_type = model_type)
                 record['final_dev'] = json.loads((checkpoint / 'dev_metrics.json').read_text())
+                beam_report = Path('dev/beam4_valid/run.json')
+                if beam_report.is_file():
+                    record['beam4_valid_evaluation'] = json.loads(beam_report.read_text())
+                    record['beam4_valid_evaluation']['inference_log_sha256'] = sha256('dev_beam4_valid.log')
                 data_statistics(output_path = 'reports/q4_statistics.json', sql_preprocessing = sql_preprocessing, max_new_tokens = config['max_new_tokens'])
             elif not Path('reports/smoke.json').is_file():
                 raise ValueError('Smoke output is missing')
@@ -245,7 +253,7 @@ def finalize(exit_code, experiment_name = None):
         raise
 
     # Save output hashes after all reports are complete
-    record['output_sha256'] = {str(p): sha256(p) for directory in ['checkpoints', 'results', 'records', 'reports']
+    record['output_sha256'] = {str(p): sha256(p) for directory in ['checkpoints', 'results', 'records', 'reports', 'dev']
         for p in sorted(Path(directory).rglob('*')) if p.is_file()}
     write_json(path, record)
 
@@ -263,11 +271,12 @@ if __name__ == '__main__':
     parser.add_argument('--sql-preprocessing', choices = SQL_PREPROCESSING_MODES, default = 'none')
     parser.add_argument('--experiment-name', default = None)
     parser.add_argument('--max-new-tokens', type = int, default = 512)
+    parser.add_argument('--model-mode', choices = ['finetune', 'scratch'], default = 'finetune')
     args = parser.parse_args()
 
     if args.action == 'stats':
         print(json.dumps(data_statistics(args.data_folder, args.tokenizer, args.output, sql_preprocessing = args.sql_preprocessing, max_new_tokens = args.max_new_tokens), indent = 2))
     elif args.action == 'prepare':
-        prepare(experiment_name = args.experiment_name or 'baseline_v1', sql_preprocessing = args.sql_preprocessing)
+        prepare(experiment_name = args.experiment_name or 'baseline_v1', sql_preprocessing = args.sql_preprocessing, model_mode = args.model_mode)
     else:
         finalize(args.exit_code, experiment_name = args.experiment_name)

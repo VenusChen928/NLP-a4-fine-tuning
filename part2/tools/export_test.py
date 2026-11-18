@@ -62,11 +62,14 @@ def main():
         parser.error("--output-dir must be new; existing files will not be overwritten")
 
     # Load either the compact local archive or the original Burst training directory
-    if (run / "run.json").is_file():
+    # Native Burst archives can also have run.json audit metadata. Their
+    # authoritative training configuration still lives under checkpoints/.
+    if (run / "checkpoint").is_dir() and (run / "run.json").is_file():
         config = json.loads((run / "run.json").read_text())["configuration"]
         checkpoint = tokenizer_path = run / "checkpoint"
     else:
         configs = list(run.glob("checkpoints/ft_experiments/*/run_config.json"))
+        configs += list(run.glob("checkpoints/scr_experiments/*/run_config.json"))
         if len(configs) != 1:
             parser.error("Expected one saved training configuration in --run-dir")
         config = json.loads(configs[0].read_text())
@@ -95,8 +98,10 @@ def main():
     output.mkdir(parents = True, exist_ok = False)
 
     # Use the original inference and scoring functions for both splits
-    sql_path = output / ("predictions.sql" if args.split == "dev" else "t5_ft_experiment_test.sql")
-    record_path = output / ("records.pkl" if args.split == "dev" else "t5_ft_experiment_test.pkl")
+    # Older fine-tuning archives may not include an explicit initialization mode
+    test_name = "t5_ft_experiment_test" if config.get("finetune", True) else "t5_ft_experiment_ec_test"
+    sql_path = output / ("predictions.sql" if args.split == "dev" else f"{test_name}.sql")
+    record_path = output / ("records.pkl" if args.split == "dev" else f"{test_name}.pkl")
     previous_directory = Path.cwd()
     try:
         os.chdir(PART2)

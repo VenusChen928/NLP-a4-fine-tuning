@@ -22,12 +22,15 @@ def initialize_model(args):
     Helper function to initialize the model. You should be either finetuning
     the pretrained model associated with the 'google-t5/t5-small' checkpoint
     or training a T5 model initialized with the 'google-t5/t5-small' config
-    from scratch.
+    from scratch
     '''
-    if not args.finetune:
-        raise ValueError("Pass: finetune to use the pretrained T5 baseline!")
-
-    model = T5ForConditionalGeneration.from_pretrained("google-t5/t5-small")
+    # Keep the same architecture for both initialization modes:
+    # Scratch reads only the configuration, including the special-token IDs
+    if args.finetune:
+        model = T5ForConditionalGeneration.from_pretrained("google-t5/t5-small")
+    else:
+        config = T5Config.from_pretrained("google-t5/t5-small")
+        model = T5ForConditionalGeneration(config)
 
     return model.to(DEVICE)
 
@@ -117,7 +120,7 @@ def get_parameter_names(model, forbidden_layer_types):
             for n in get_parameter_names(child, forbidden_layer_types)
             if not isinstance(child, tuple(forbidden_layer_types))
         ]
-    # Add model specific parameters (defined with nn.Parameter) since they are not in any child.
+    # Add model specific parameters (defined with nn.Parameter) since they are not in any child
     result += list(model._parameters.keys())
     return result
 

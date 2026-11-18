@@ -1,0 +1,80 @@
+{
+  "tokenizer": "google-t5/t5-small",
+  "counting_convention": "T5 tokens; exclude added EOS, batch padding, and decoder start token; include emitted UNK. Vocabulary is distinct observed token IDs per split and text field.",
+  "processing": "strip leading/trailing whitespace; encode < as SQL_LT and <= as SQL_LE outside quoted text and comments",
+  "sql_preprocessing": "operators_v1",
+  "sql_processing_checks": {
+    "train": {
+      "examples": 4225,
+      "conversion_mismatches": 0,
+      "tokenizer_roundtrip_mismatches": 0,
+      "examples_with_unk": 0,
+      "max_tokens_with_eos": 511,
+      "examples_above_generation_limit": 0,
+      "max_new_tokens": 512
+    },
+    "dev": {
+      "examples": 466,
+      "conversion_mismatches": 0,
+      "tokenizer_roundtrip_mismatches": 0,
+      "examples_with_unk": 0,
+      "max_tokens_with_eos": 503,
+      "examples_above_generation_limit": 0,
+      "max_new_tokens": 512
+    }
+  },
+  "rows": [
+    {
+      "stage": "raw",
+      "split": "train",
+      "number_of_examples": 4225,
+      "natural_language_mean_tokens": 17.097278106508877,
+      "natural_language_vocabulary_size": 791,
+      "natural_language_max_tokens": 59,
+      "natural_language_examples_with_unk": 0,
+      "sql_mean_tokens": 216.37254437869822,
+      "sql_vocabulary_size": 555,
+      "sql_max_tokens": 510,
+      "sql_examples_with_unk": 393
+    },
+    {
+      "stage": "raw",
+      "split": "dev",
+      "number_of_examples": 466,
+      "natural_language_mean_tokens": 17.070815450643778,
+      "natural_language_vocabulary_size": 465,
+      "natural_language_max_tokens": 43,
+      "natural_language_examples_with_unk": 0,
+      "sql_mean_tokens": 210.05364806866953,
+      "sql_vocabulary_size": 395,
+      "sql_max_tokens": 502,
+      "sql_examples_with_unk": 45
+    },
+    {
+      "stage": "processed",
+      "split": "train",
+      "number_of_examples": 4225,
+      "natural_language_mean_tokens": 17.097278106508877,
+      "natural_language_vocabulary_size": 791,
+      "natural_language_max_tokens": 59,
+      "natural_language_examples_with_unk": 0,
+      "sql_mean_tokens": 216.44828402366863,
+      "sql_vocabulary_size": 556,
+      "sql_max_tokens": 510,
+      "sql_examples_with_unk": 0
+    },
+    {
+      "stage": "processed",
+      "split": "dev",
+      "number_of_examples": 466,
+      "natural_language_mean_tokens": 17.070815450643778,
+      "natural_language_vocabulary_size": 465,
+      "natural_language_max_tokens": 43,
+      "natural_language_examples_with_unk": 0,
+      "sql_mean_tokens": 210.12660944206007,
+      "sql_vocabulary_size": 396,
+      "sql_max_tokens": 502,
+      "sql_examples_with_unk": 0
+    }
+  ]
+}
