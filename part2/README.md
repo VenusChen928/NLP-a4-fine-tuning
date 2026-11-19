@@ -9,6 +9,7 @@ of the 25-epoch, LR `3e-4` run. Both use beam-4 with execution validity filterin
 - [Burst execution guide](../hpc/burst/PART2.md)
 - [Machine-readable results and hashes](reports/final_results.json)
 - [Scratch error analysis](reports/scratch_error_analysis.json)
+- [Final repository, Gradescope and Drive audit](reports/submission_audit.json)
 
 ## Code and storage
 

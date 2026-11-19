@@ -236,7 +236,7 @@
         "record_em": 80.79,
         "sql_em": 0.0
       },
-      "test_score_source": "Gradescope results supplied by user; test gold is unavailable locally.",
+      "test_score_source": "Live Gradescope submission 449497755 verified on 2026-11-18. Test gold is unavailable locally.",
       "sql_errors": 16,
       "sql_timeouts": 1,
       "files": {
@@ -250,7 +250,8 @@
           "archive": "runs/sql_ops_e30_lr3e4_33756/test/t5_ft_experiment_test.pkl",
           "sha256": "0db60c30e5b5e4565849047725b13589e7a5172171227c62ff7258deabccf098"
         }
-      }
+      },
+      "test_score_url": "https://www.gradescope.com/courses/1379043/assignments/9022933/submissions/449497755"
     },
     {
       "model": "scratch",
@@ -262,7 +263,7 @@
         "record_em": 50.23,
         "sql_em": 0.0
       },
-      "test_score_source": "Gradescope results supplied by user; test gold is unavailable locally.",
+      "test_score_source": "Live Gradescope submission 449497755 verified on 2026-11-18. Test gold is unavailable locally.",
       "sql_errors": 8,
       "sql_timeouts": 2,
       "files": {
@@ -276,11 +277,12 @@
           "archive": "runs/scratch_ec_e25_lr3e4_35002/test/beam4_valid/t5_ft_experiment_ec_test.pkl",
           "sha256": "825a9242d07600d4fbb426aa24c0ecdc7869d91769436ae862256dcf4d1533c3"
         }
-      }
+      },
+      "test_score_url": "https://www.gradescope.com/courses/1379043/assignments/9022933/submissions/449497755"
     }
   ],
   "checkpoint_folders": {
-    "finetuned": "https://drive.google.com/drive/folders/1QnYX8-S_jJCA4kNl6YQQJ9IN0Y2IZDas",
+    "finetuned": "https://drive.google.com/drive/folders/1biyHXenO-PRGijD6IdsZVrojRKwCT1XP",
     "scratch": "https://drive.google.com/drive/folders/1GtJ2IgVI3lc4vqJf8JoopUNmcgOVoSiR"
   }
 }

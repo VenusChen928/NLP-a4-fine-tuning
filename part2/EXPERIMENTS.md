@@ -3,25 +3,27 @@
 Verified on 2026-11-18. All planned training and decoding experiments have finished.
 No additional training is planned. Dev metrics below were recomputed from saved
 SQL and record files using the supplied scoring functions. Test scores are
-Gradescope results reported by the user; test references are unavailable locally.
+verified against live Gradescope submission `449497755` on November 18. Test
+references are unavailable locally.
 Full-precision metrics, artifact paths and SHA-256 hashes are in
 [final_results.json](reports/final_results.json).
 
 ## Fine-tuning
 
-All runs start independently from pretrained T5-small. `Operators` uses the
-reversible `<`/`<=` representation; other data and architecture settings are shared.
+All runs start independently from pretrained T5-small. The baseline uses original
+SQL. All other runs use Q4's reversible SQL preprocessing for `<` and `<=`, with
+the same architecture and other data settings.
 
 | Training run | Selected epoch | Decoding | SQL EM % | Record EM % | Record F1 % |
 | --- | ---: | --- | ---: | ---: | ---: |
 | Baseline, 20 epochs, 3e-4 (`31836`) | 19 | Greedy | 55.36 | 70.17 | 74.51 |
-| Operators, 20 epochs, 3e-4 (`32887`) | 20 | Greedy | 57.08 | 71.89 | 76.15 |
+| SQL preprocessing, 20 epochs, 3e-4 (`32887`) | 20 | Greedy | 57.08 | 71.89 | 76.15 |
 | Same checkpoint | 20 | Beam-4 | 57.73 | 74.46 | 78.67 |
 | Same checkpoint | 20 | Beam-4 + valid | 57.94 | 75.11 | 79.72 |
 | Same checkpoint | 20 | Beam-8 + valid | 57.94 | 74.68 | 79.15 |
-| Operators, 30 epochs, 1e-4 (`33954`) | 30 | Greedy | 46.14 | 62.45 | 70.20 |
+| Lower LR, 30 epochs, 1e-4 (`33954`) | 30 | Greedy | 46.14 | 62.45 | 70.20 |
 | Same checkpoint | 30 | Beam-4 + valid | 48.71 | 66.09 | 75.02 |
-| Operators, 30 epochs, 3e-4 (`33756`) | 29 | Greedy | 68.03 | 82.83 | 84.47 |
+| Longer training, 30 epochs, 3e-4 (`33756`) | 29 | Greedy | 68.03 | 82.83 | 84.47 |
 | **Selected checkpoint** | **29** | **Beam-4 + valid** | **69.10** | **84.55** | **86.46** |
 
 The 30-epoch budget also extends linear learning-rate decay; this comparison
@@ -65,8 +67,8 @@ this as a fully controlled estimate of pretraining alone.
 | Epoch 20, greedy, job 34979 (historical) | 51.60 | 47.45 | 0.00 | 31/432 |
 | **Epoch 23, beam-4 + valid, job 36063 (selected)** | **53.39** | **50.23** | **0.00** | **8/432** |
 
-The latest test score was supplied by the user on November 18. Its eight errors
-include two saved timeouts. Both test versions remain in their original run
+The latest test score was verified on Gradescope submission `449497755`. Its eight
+errors include two saved timeouts. Both test versions remain in their original run
 archives. The selected SQL/PKL pair is also copied to the required top-level paths.
 The reported 0.00 SQL EM is retained as reported; dev results and record metrics
 should not be replaced by an inferred test SQL score.

@@ -133,6 +133,7 @@
       "sharing": "anyone reader"
     }
   ],
-  "remote_verification": "Connector confirmed file names, sizes and reader permissions. It did not expose remote checksums.",
-  "packaging": "Standard Hugging Face safetensors shards; every reloaded state_dict tensor was checked exactly equal to the original weights before upload."
+  "remote_verification": "Downloaded all checkpoint payload files from Drive on 2026-11-18. All 12 payload SHA-256 hashes match the manifest. The downloaded sharded model loads offline, and all 134 state_dict tensors exactly equal the original epoch-23 checkpoint.",
+  "packaging": "Standard Hugging Face safetensors shards; every reloaded state_dict tensor was checked exactly equal to the original weights before upload.",
+  "verification_report": "submission_audit.json"
 }

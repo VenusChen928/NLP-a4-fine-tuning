@@ -1,0 +1,231 @@
+{
+  "verified_on": "2026-11-18 America/New_York",
+  "scope": "Final repository, saved outputs, live Gradescope coding submission, online Overleaf writeup and downloaded Drive checkpoint verification. No training, generation or SQL re-execution.",
+  "code_commit_reviewed": "21f92483008e787b681f9b68f70aa3338f6fd777",
+  "repository": "https://github.com/VenusChen928/NLP-a4-fine-tuning",
+  "code_checks": {
+    "regression_command": "python -B -m pytest -q -p no:cacheprovider part2/tools/check_training_modes.py",
+    "tests_passed": 18,
+    "warnings": "Three dependency deprecation warnings from upb/sentry.",
+    "environment": "Local Python 3.12, torch 2.11, transformers 4.40, wandb 0.16.6. Archived training environments remain separately documented.",
+    "python_files_syntax_checked": 13,
+    "training_histories_checked": 7,
+    "source_archives_crc_checked": 10
+  },
+  "saved_result_checks": {
+    "dev_configurations_recomputed": 13,
+    "pilot_evidence_examples_checked": 466,
+    "pilot_execution_errors": 466,
+    "pilot_empty_gold_credits": 55,
+    "q4_statistics_recomputed_and_matching": true,
+    "selected_test_artifacts": [
+      {
+        "model": "finetuned",
+        "epoch": 29,
+        "files": {
+          "t5_ft_experiment_test.sql": {
+            "sha256": "e4bdceeec625bc953764c179df6fe379cd403bf3f3f0927baef5e8dca75407f7",
+            "matches_archive": true
+          },
+          "t5_ft_experiment_test.pkl": {
+            "sha256": "0db60c30e5b5e4565849047725b13589e7a5172171227c62ff7258deabccf098",
+            "matches_archive": true
+          }
+        },
+        "queries": 432,
+        "records": 432,
+        "error_entries": 432,
+        "sql_errors": 16
+      },
+      {
+        "model": "scratch",
+        "epoch": 23,
+        "files": {
+          "t5_ft_experiment_ec_test.sql": {
+            "sha256": "e203579b551ef55a060d15d49a39adaba67b093501dc571d6d3ae77a240a24e0",
+            "matches_archive": true
+          },
+          "t5_ft_experiment_ec_test.pkl": {
+            "sha256": "825a9242d07600d4fbb426aa24c0ecdc7869d91769436ae862256dcf4d1533c3",
+            "matches_archive": true
+          }
+        },
+        "queries": 432,
+        "records": 432,
+        "error_entries": 432,
+        "sql_errors": 8
+      }
+    ],
+    "part1": [
+      {
+        "file": "out_original.txt",
+        "sha256": "59a4e340eed7357c18af6211485b317e34951319600e1c09b0ac9d5ab3cedddc",
+        "examples": 25000,
+        "correct": 23268,
+        "accuracy": 93.072
+      },
+      {
+        "file": "out_transformed.txt",
+        "sha256": "d46dcc912a478f7ba8f1696c384cd3ef493d754d35cb1e75258ebadceec9a561",
+        "examples": 25000,
+        "correct": 22009,
+        "accuracy": 88.036
+      },
+      {
+        "file": "out_augmented_original.txt",
+        "sha256": "b46a62b117bf53cdaf81bcced82124860d9cf394b318d642a16e57f97640982c",
+        "examples": 25000,
+        "correct": 23228,
+        "accuracy": 92.912
+      },
+      {
+        "file": "out_augmented_transformed.txt",
+        "sha256": "87c7df9fde2a906fa727c273555cc4ee5555b0740311f3723ec547cf2823fb7f",
+        "examples": 25000,
+        "correct": 22262,
+        "accuracy": 89.048
+      }
+    ],
+    "error_analysis": [
+      {
+        "model": "finetuned",
+        "reviewed_union": 75,
+        "record_em_failures": 72,
+        "execution_failures": 17,
+        "execution_failures_credited_for_empty_gold": 3,
+        "excluded_reference_anomalies": 3,
+        "classified_cases": 72,
+        "coverage_and_disjointness_verified": true
+      },
+      {
+        "model": "scratch",
+        "reviewed_union": 198,
+        "record_em_failures": 196,
+        "execution_failures": 7,
+        "execution_failures_credited_for_empty_gold": 2,
+        "excluded_reference_anomalies": 3,
+        "classified_cases": 195,
+        "coverage_and_disjointness_verified": true
+      }
+    ],
+    "failures": []
+  },
+  "gradescope": {
+    "submission_id": 449497755,
+    "zip_sha256": "f3b3beb9ee7317134223a4bcd5746dc268940bac4e5b1ea63fc77fa907c8ecd4",
+    "files": [
+      {
+        "name": "out_original.txt",
+        "sha256": "59a4e340eed7357c18af6211485b317e34951319600e1c09b0ac9d5ab3cedddc",
+        "matches_local": true
+      },
+      {
+        "name": "out_transformed.txt",
+        "sha256": "d46dcc912a478f7ba8f1696c384cd3ef493d754d35cb1e75258ebadceec9a561",
+        "matches_local": true
+      },
+      {
+        "name": "out_augmented_original.txt",
+        "sha256": "b46a62b117bf53cdaf81bcced82124860d9cf394b318d642a16e57f97640982c",
+        "matches_local": true
+      },
+      {
+        "name": "out_augmented_transformed.txt",
+        "sha256": "87c7df9fde2a906fa727c273555cc4ee5555b0740311f3723ec547cf2823fb7f",
+        "matches_local": true
+      },
+      {
+        "name": "t5_ft_experiment_test.sql",
+        "sha256": "e4bdceeec625bc953764c179df6fe379cd403bf3f3f0927baef5e8dca75407f7",
+        "matches_local": true
+      },
+      {
+        "name": "t5_ft_experiment_test.pkl",
+        "sha256": "0db60c30e5b5e4565849047725b13589e7a5172171227c62ff7258deabccf098",
+        "matches_local": true
+      },
+      {
+        "name": "t5_ft_experiment_ec_test.sql",
+        "sha256": "e203579b551ef55a060d15d49a39adaba67b093501dc571d6d3ae77a240a24e0",
+        "matches_local": true
+      },
+      {
+        "name": "t5_ft_experiment_ec_test.pkl",
+        "sha256": "825a9242d07600d4fbb426aa24c0ecdc7869d91769436ae862256dcf4d1533c3",
+        "matches_local": true
+      }
+    ],
+    "extra_files": [
+      "metadata.yml"
+    ],
+    "url": "https://www.gradescope.com/courses/1379043/assignments/9022933/submissions/449497755",
+    "scores_verified_live": true,
+    "test_scores_percent": {
+      "finetuned": {
+        "record_f1": 83.37,
+        "record_em": 80.79,
+        "sql_em": 0.0
+      },
+      "scratch": {
+        "record_f1": 53.39,
+        "record_em": 50.23,
+        "sql_em": 0.0
+      }
+    },
+    "finetuned_performance_points": "25/25",
+    "scratch_performance_threshold_met": true,
+    "written_submission_status_observed": "No Submission"
+  },
+  "drive": {
+    "root": "https://drive.google.com/drive/folders/1QnYX8-S_jJCA4kNl6YQQJ9IN0Y2IZDas",
+    "structure": [
+      "Q7_finetuned_epoch29",
+      "Extra_scratch_epoch23"
+    ],
+    "finetuned_archive": "https://drive.google.com/drive/folders/1biyHXenO-PRGijD6IdsZVrojRKwCT1XP",
+    "finetuned_checkpoint_subfolder": "https://drive.google.com/drive/folders/1ZGm9A5yKuYDIT-QZTTxHJxzDmDc1sErv",
+    "scratch_checkpoint": "https://drive.google.com/drive/folders/1GtJ2IgVI3lc4vqJf8JoopUNmcgOVoSiR",
+    "root_archive_folders_and_weights_anyone_reader_verified": true,
+    "finetuned_original_weight_sha256": "ea62dc78d5fb28ee9a8638f158377c0f1c5435924384801ffad4e5d6db124cb8",
+    "downloaded_checkpoint_checks": {
+      "finetuned_checkpoint_files_byte_identical": 7,
+      "finetuned_test_files_byte_identical": 2,
+      "scratch_manifest_files_sha256_verified": 12,
+      "scratch_original_weight_sha256": "611caf5168cc650cbf491a4fd8cfd8804fe7238b060f41284f68188eab01f26b",
+      "scratch_tensors_equal": 134,
+      "parameters": 60506624,
+      "architecture_matches_finetuned": true,
+      "scratch_downloaded_checkpoint_loads_offline": true
+    },
+    "scratch_file_checksums": "scratch_checkpoint.json"
+  },
+  "writeup": {
+    "url": "https://www.overleaf.com/project/6aef7e3c8762a10b6ea97130",
+    "reviewed_requirements": [
+      "Q1 full test accuracy",
+      "Q2 reproducible transformation and accuracy drop",
+      "Q3 augmentation results, explanation and limitation",
+      "Q4 default-tokenizer statistics before and after processing",
+      "Q5 selected architecture, processing, optimization and decoding",
+      "Q6 dev experiment comparisons, selected test result, error examples, causes and counts",
+      "Q7 leaderboard performance and chosen checkpoint link",
+      "Extra random initialization with the same architecture, training settings, experiments, error analysis and selected checkpoint link"
+    ],
+    "shared_scratch_statistics": "The handout literally requests new Tables 1-5 for extra credit. At the user's explicit preference, scratch cites the identical Q4 Tables 1-2 and explains why they are shared. Scratch Tables 3-5 are separate.",
+    "prose_review": "Removed semicolons, improved transitions, varied sentence subjects and shortened long sentences without changing results.",
+    "layout_review": "Five online PDF pages inspected. Table 1 remains on page 1. Existing scratch error interpretation follows Table 4 to fill the previous blank space. Error tables retain examples and explanations, with captions below.",
+    "source_or_pdf_downloaded": false,
+    "online_compile": {
+      "pages": 5,
+      "errors": 0,
+      "warnings": 0,
+      "info": 0
+    }
+  },
+  "limitations": [
+    "Test gold references are unavailable locally. Reported test metrics were verified against Gradescope, not recomputed locally.",
+    "Error causes are hypotheses. Category membership and coverage were checked against saved outputs, but categories are manual annotations.",
+    "The written PDF still needs submission to Gradescope.",
+    "Shared scratch Tables 1-2 are an explicit presentation choice rather than literal duplication of every table requested in the extra-credit instructions."
+  ]
+}

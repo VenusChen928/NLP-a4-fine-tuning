@@ -9,8 +9,9 @@ byte-for-byte against its archived source.
 | Q7 | `sql_ops_e30_lr3e4_33756`, epoch 29 | Beam-4 + valid | 83.37% | 80.79% |
 | Extra credit | `scratch_ec_e25_lr3e4_35002`, epoch 23 | Beam-4 + valid | 53.39% | 50.23% |
 
-Both reported test SQL EM scores are 0.00%. Gradescope scores are user-reported;
-local verification checks saved file counts, execution errors and hashes.
+Both reported test SQL EM scores are 0.00%. The live Gradescope results and all
+eight files in coding submission `449497755` were verified on November 18.
+The downloaded submission files match the selected local files byte-for-byte.
 
 - Q7 SQL: `results/t5_ft_experiment_test.sql`
 - Q7 records: `records/t5_ft_experiment_test.pkl`
@@ -26,10 +27,15 @@ The historical epoch-20 scratch pair remains under
 with the final results. The selected files have 16 Q7 execution errors and 8
 extra-credit errors, including two extra-credit timeouts.
 
-- [Fine-tuned checkpoint](https://drive.google.com/drive/folders/1QnYX8-S_jJCA4kNl6YQQJ9IN0Y2IZDas)
+- [Fine-tuned epoch-29 archive](https://drive.google.com/drive/folders/1biyHXenO-PRGijD6IdsZVrojRKwCT1XP)
 - [Scratch epoch-23 checkpoint](https://drive.google.com/drive/folders/1GtJ2IgVI3lc4vqJf8JoopUNmcgOVoSiR)
 
 The scratch folder contains all Hugging Face shards and their index, tokenizer,
 configuration and loading instructions. It can be loaded from one local folder
 with `from_pretrained`. Only the models used for the submitted outputs are shared;
 other experiments remain in the local archives.
+
+The Q7 archive stores the model inside its `checkpoint/` subfolder. Downloaded
+Drive files were checked against the original checkpoints. All 134 tensors in
+the downloaded scratch model exactly match the original epoch-23 model.
+See [the final submission audit](../reports/submission_audit.json) for evidence.
